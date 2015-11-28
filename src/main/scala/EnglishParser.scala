@@ -9,14 +9,14 @@ import AST._
 object EnglishParser extends SentenceParser with RegexParsers {
 
   lazy val sentence = np ~ " " ~ vp <~ "." ^^ {(np,_, vp) => Sentence(np, vp)}
-  lazy val np = noun  ^^ {noun => NP(noun)}
-  lazy val noun = "\\w+".r ^^ {w => Noun(w)}
+  lazy val np = noun  ^^ NP
+  lazy val noun = "\\w+".r ^^ Noun
   //lazy val vp = ( verb          ^^ {v => VP(v, None)}
   //              | verb ~ " " ~ np ^^ {(v,_,np) => VP(v, Some(np))}
   //)
   //lazy val vp = verb ~ " " ~ np ^^ {(v,_,np) => VP(v, Some(np))}
   lazy val vp = verb ^^ {v => VP(v, None)}
-  lazy val verb = "\\w+".r ^^ {w => Verb(w)}
+  lazy val verb = "\\w+".r ^^ Verb
 
   def parser = sentence
 
