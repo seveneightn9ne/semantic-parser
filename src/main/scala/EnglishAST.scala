@@ -29,7 +29,7 @@ object AST {
       case (Right(h), None, Some(a)) => h.toString + " " + a.toString
       case (Left(h), None, None) => h.toString
       case (Right(h), None, None) => h.toString
-      case _ => "INVALID TREE " + super.toString
+      case _ => "INVALID TREE " + super.toString // TODO not helpful -_-
     }
   }
 
@@ -54,7 +54,6 @@ object AST {
     def apply(head:Noun) = new Nbar(Left(head))
     def apply(head:Nbar, adjunct:PP) = new Nbar(Right(head), Some(adjunct))
   }
-  //TODO NP spec should be DP
   case class NP(spec:Option[DP], head:Nbar) extends XP[Determiner, Noun, Word, Preposition]
   object NP {
     def apply(spec:DP, head:Nbar) = new NP(Some(spec), head)
@@ -95,8 +94,20 @@ object AST {
 
   case class Verb(text:String) extends Word
   case class Noun(text:String) extends Word
-  case class Preposition(text:String) extends Word
-  case class Determiner(text:String) extends Word
+
+  sealed trait ClosedClassWord extends Enumeration with Word {
+    val text = this.toString.toLowerCase
+  }
+
+  case class Preposition extends Enumeration with ClosedClassWord {
+    type Preposition = Value
+    val On, At, With, From, To, In, Of = Value
+  }
+
+  case class Determiner extends Enumeration with ClosedClassWord {
+    type Determiner = Value
+    val The, A, S, Some, All, No = Value
+  }
 
   case class Sentence(np:NP, vp:VP) {
     override def toString = np.toString + " " + vp.toString
