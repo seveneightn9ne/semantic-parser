@@ -12,14 +12,14 @@ trait SentenceParser extends Parsers {
       println("Output:")
       val results = parser(LineStream(Source fromFile file))
       if (results exists {_.isInstanceOf[Success[Sentence]]}) {
-        handleSuccesses(for (Success(tree, _) <- results) yield tree)
+	handleSuccesses(for (Success(tree, _) <- results) yield tree)
       } else {
-        val sorted = results.toList sortWith {_.tail.length < _.tail.length}
-        val length = sorted.head.tail.length
+	val sorted = results.toList sortWith {_.tail.length < _.tail.length}
+	val length = sorted.head.tail.length
 
-        for (Failure(msg, tail) <- sorted takeWhile {_.tail.length == length}) {
-          tail.printError("  error:%%d: %s%n    %%s%n    %%s%n".format(msg))(System.err)
-        }
+	for (Failure(msg, tail) <- sorted takeWhile {_.tail.length == length}) {
+	  tail.printError("  error:%%d: %s%n    %%s%n    %%s%n".format(msg))(System.err)
+	}
       }
       println()
     }
@@ -31,18 +31,20 @@ trait SentenceParser extends Parsers {
     val errors = mutable.Set[String]()
 
     val status = for (sentence <- forest) yield {
-      Some(sentence.toString)
+      Some(sentence)
     }
 
     val results = status flatMap { x => x }
 
     if (results.length == 0) {
       for (msg <- errors) {
-        println("  runtime error: " + msg)
+	println("  runtime error: " + msg)
       }
-    } else if (results.length == 1)
-      println("  " + results.head)
-    else
+    } else if (results.length == 1) {
+      println("  " + results.head.toString)
+      println("  " + results.head.asText)
+    } else {
       printf("  parse error: Ambiguous parse: %s valid trees%n", results.length.toString)
+    }
   }
 }

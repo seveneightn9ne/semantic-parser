@@ -1,6 +1,7 @@
 package semanticparser
 
 object AST {
+  case class InvalidASTException(message: String) extends Exception(message)
 
   /**
    * S -> Specifier's head type
@@ -12,24 +13,26 @@ object AST {
     val spec:Option[XP[Word, S, Word, Word]]
     val head:Xbar[H, C, A]
 
-    override def toString = spec match {
-      case Some(s) => s.toString + " " + head.toString
-      case _ => head.toString
+    def asText: String = spec match {
+      case Some(s) => s.asText + " " + head.asText
+      case _ => head.asText
     }
   }
+
   sealed trait Xbar[+H <: Word, +C <: Word, +A <: Word] {
     val head:Either[H, Xbar[H, Word, Word]]
     val complement: Option[XP[Word, C, Word, Word]]
     val adjunct: Option[XP[Word, A, Word, Word]]
 
-    override def toString = (head, complement, adjunct) match {
-      case (Left(h), Some(c), None) => h.toString + " " + c.toString
-      case (Right(h), Some(c), None) => h.toString + " " + c.toString
-      case (Left(h), None, Some(a)) => h.toString + " " + a.toString
-      case (Right(h), None, Some(a)) => h.toString + " " + a.toString
-      case (Left(h), None, None) => h.toString
-      case (Right(h), None, None) => h.toString
-      case _ => "INVALID TREE " + super.toString // TODO not helpful -_-
+    def asText: String = (head, complement, adjunct) match {
+      case (Left(h), Some(c), None) => h.asText + " " + c.asText
+      case (Right(h), Some(c), None) => h.asText + " " + c.asText
+      case (Left(h), None, Some(a)) => h.asText + " " + a.asText
+      case (Right(h), None, Some(a)) => h.asText + " " + a.asText
+      case (Left(h), None, None) => h.asText
+      case (Right(h), None, None) => h.asText
+      case _ => throw new InvalidASTException(
+		    "Cannot have both complement and adjunct." + super.toString)
     }
   }
 
@@ -89,7 +92,7 @@ object AST {
 
   sealed trait Word {
     val text:String
-    override def toString = text
+    def asText = text
   }
 
   case class Verb(text:String) extends Word
@@ -110,6 +113,6 @@ object AST {
   }
 
   case class Sentence(np:NP, vp:VP) {
-    override def toString = np.toString + " " + vp.toString
+    def asText = np.asText + " " + vp.asText + "."
   }
 }
