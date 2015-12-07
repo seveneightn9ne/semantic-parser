@@ -18,24 +18,31 @@ object PredicateCalculus {
   case class Entity extends InA
 
   sealed trait Predicate
-  case class Conjunction(a:Predicate,   b:Predicate) extends Predicate {
+  case class Conjunction(a:Predicate, b:Predicate) extends Predicate {
     override def toString = "(" + a.toString + " & " + b.toString + ")"
   }
-  case class Disjunction(a:Predicate,   b:Predicate) extends Predicate {
+  case class Disjunction(a:Predicate, b:Predicate) extends Predicate {
     override def toString = "(" + a.toString + " | " + b.toString + ")"
   }
-  case class Existential(v:Character,    p:Predicate) extends Predicate {
-    // TODO override tostring for the rest...
+  case class Existential(v:Character, p:Predicate) extends Predicate {
+    override def toString = "(∃" + v.toString + ")" + p.toString
   }
-  case class Universal(v:Character,      p:Predicate) extends Predicate
-  case class Conditional(a:Predicate,   b:Predicate) extends Predicate
-  case class Biconditional(a:Predicate, b:Predicate) extends Predicate
-  case class Atom(relation:Character,  variable:Character) extends Predicate {
+  case class Universal(v:Character, p:Predicate) extends Predicate {
+    override def toString = "(∀" + v.toString + ")" + p.toString
+  }
+  case class Conditional(a:Predicate, b:Predicate) extends Predicate {
+    override def toString = "(" + a.toString + " → " + b.toString + ")"
+  }
+  case class Biconditional(a:Predicate, b:Predicate) extends Predicate {
+    override def toString = "(" + a.toString + " ↔ " + b.toString + ")"
+  }
+  case class Atom(relation:Character, variable:Character) extends Predicate {
     override def toString = relation.toString + variable.toString
   }
 
   def translate(sentence:Sentence):Predicate = sentence match {
-    case Sentence(NP(None, Nbar(Left(Noun(n)), None)), VP(None, Vbar(Left(Verb(v)), None, None))) => Atom(A.relationVariable(v), A.entityVariable(n))
+    case Sentence(NP(None, Nbar(Left(Noun(n)), None)), VP(None, Vbar(Left(Verb(v)), None, None))) =>
+      Atom(A.relationVariable(v), A.entityVariable(n))
     case _ => Atom('N','O')
   }
 
