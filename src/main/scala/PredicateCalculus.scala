@@ -2,7 +2,9 @@ package semanticparser
 
 import collection.mutable.Map
 import collection.mutable.Set
-import AST._
+import XPrules._
+import VPrules._
+import NPrules._
 
 object PredicateCalculus {
   class A {

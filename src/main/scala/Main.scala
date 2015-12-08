@@ -1,6 +1,9 @@
 package semanticparser
 
-import AST._
+import XPrules._
+import NPrules._
+import VPrules._
+
 object Main {
   
   def main(args: Array[String]) {

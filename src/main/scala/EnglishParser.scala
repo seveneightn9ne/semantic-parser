@@ -4,7 +4,9 @@ import scala.io.Source
 import scala.collection.mutable
 
 import com.codecommit.gll._
-import AST._
+import XPrules._
+import NPrules._
+import VPrules._
 
 object EnglishParser extends SentenceParser with RegexParsers {
 

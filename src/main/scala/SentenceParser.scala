@@ -3,7 +3,7 @@ package semanticparser
 import scala.collection.mutable
 import scala.io.Source
 import com.codecommit.gll._
-import AST._
+import XPrules._
 
 trait SentenceParser extends Parsers {
   def main(args: Array[String]) {
