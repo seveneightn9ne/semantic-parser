@@ -1,23 +1,42 @@
 package semanticparser
 
 import collection.mutable.Map
-import collection.mutable.Set
+import collection.mutable.{Set => MutSet}
 import XPrules._
 import VPrules._
 import NPrules._
 
 object PredicateCalculus {
   class A {
+
+    /** All entities/relations in this universe */
     val entityMap = Map[EntityDesignation, Entity]()
     val relationMap = Map[RelationDesignation, Relation]()
+
+    /** Map (e,R) to the truth value of Re */
+    val applicationMap = Map[(Entity, Relation), Boolean]()
+
+    /** Get an Entity/Relation from its Designation **/
     def apply(designation:EntityDesignation):Option[Entity] = entityMap get designation
     def apply(designation:RelationDesignation):Option[Relation] = relationMap get designation
+    /** Get the truth value of Re */
+    def apply(e:Entity, r:Relation):Boolean = applicationMap((e,r))
+
     def put(e:Entity) = entityMap.put(e.designation, e)
     def put(r:Relation) = relationMap.put(r.designation, r)
+
+    /** Assert that the entity is a member of the relation, or not */
+    def relate(e:Entity, r:Relation, b:Boolean) = {
+      this.put(e)
+      this.put(r)
+      applicationMap.put((e,r), b)
+    }
+
+    override def toString = applicationMap.toString
   }
   object UniqueDesignations {
-    val entities:Set[String] = Set[String]()
-    val relations:Set[String] = Set[String]()
+    val entities:MutSet[String] = MutSet[String]()
+    val relations:MutSet[String] = MutSet[String]()
     var lastHypothetical:Character = ('a'.toInt - 1).toChar
 
     def relationDesignation(word:String):RelationConstant = {
@@ -43,7 +62,7 @@ object PredicateCalculus {
   }
 
   sealed trait InA
-  case class Relation(designation:RelationDesignation, members:Set[Entity]) extends InA
+  case class Relation(designation:RelationDesignation) extends InA
   case class Entity(designation:EntityDesignation) extends InA
 
   sealed trait Designation
@@ -59,7 +78,7 @@ object PredicateCalculus {
   case class EntityConstant(value:String) extends EntityDesignation
   case class EntityVariable(value:String) extends EntityDesignation
 
-  val universes:Set[A] = Set[A]()
+  //val universes:Set[A] = Set[A]()
 
   sealed trait Predicate {
     def evaluate(universe:A): Boolean
@@ -105,16 +124,22 @@ object PredicateCalculus {
     lazy val entities = a.entities ++ b.entities
     override def toString = "(" + a.toString + " ↔ " + b.toString + ")"
   }
+  case class Negation(p:Predicate) extends Predicate {
+    def evaluate(universe:A) = !p.evaluate(universe)
+    lazy val relations = p.relations
+    lazy val entities = p.entities
+    override def toString = "¬" + p.toString
+  }
   case class Atom(relation:RelationDesignation, entity:EntityDesignation) extends Predicate {
     def evaluate(universe:A) = entity match {
       case _:EntityVariable => false // TODO exception
       case c:EntityConstant => (universe(relation), universe(c)) match {
-        case (Some(Relation(d,m)), Some(e)) => m contains e
+        case (Some(r), Some(e)) => universe(e,r)
         case _ => false
       }
     }
     // No members, despite this predicate asserting a membership:
-    lazy val relations = Set[Relation](Relation(relation, Set()))
+    lazy val relations = Set[Relation](Relation(relation) )
     lazy val entities = Set[Entity](Entity(entity))
     override def toString = relation.value + entity.value
   }
@@ -132,6 +157,25 @@ object PredicateCalculus {
   def extractRelations(predicates:Set[Predicate]):Set[Relation] = predicates flatMap {p => p.relations}
   def extractEntities(predicates:Set[Predicate]):Set[Entity] = predicates flatMap {p => p.entities}
 
+  def allUniverses(e:Set[Entity], r:Set[Relation]):Set[A] = {
+    val entity = e.toIndexedSeq
+    val relation = r.toIndexedSeq
+    //println(Utils.refeed[Int](10, x=>x+1, 0))
+    //println(e.size*r.size)
+    //println(Utils.refeed(2, Utils.expandBitstring, Set[List[Boolean]](List())))
+    Utils.refeed[Set[List[Boolean]]](
+      e.size * r.size, Utils.expandBitstring, Set[List[Boolean]](List())) map { bitstring =>
+        val universe = new A()
+        bitstring.indices.foreach { i =>
+          universe.relate(entity(i % e.size), relation(i / e.size), bitstring(i))
+        }
+        universe
+  }}
+
+  def possibleUniverses(predicates:Set[Predicate]) = allUniverses(
+    extractEntities(predicates), extractRelations(predicates)).filter{u =>
+      predicates.forall{p => p.evaluate(u)}
+  }
 
   def translate(sentence:Sentence):Predicate = sentence match {
     case VP(Some(NP(None, Nbar(Left(Noun(n)), None))), Vbar(Left(Verb(v)), None, None)) =>

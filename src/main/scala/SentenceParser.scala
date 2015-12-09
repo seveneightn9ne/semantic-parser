@@ -41,8 +41,11 @@ trait SentenceParser extends Parsers {
 	println("  runtime error: " + msg)
       }
     } else if (results.length == 1) {
-      println("  " + results.head.toString)
+      //println("  " + results.head.toString)
       println("  " + results.head.asText)
+      val predicate = PredicateCalculus.translate(results.head)
+      println("  " + predicate)
+      println("  " + PredicateCalculus.possibleUniverses(Set(predicate)))
     } else {
       printf("  parse error: Ambiguous parse: %s valid trees%n", results.length.toString)
     }
