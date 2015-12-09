@@ -12,11 +12,11 @@ object NPrules {
     def apply(head:Noun) = new Nbar(Left(head))
     def apply(head:Nbar, adjunct:PP) = new Nbar(Right(head), Some(adjunct))
   }
-  case class NP(spec:Option[DP], head:Nbar) extends XP[Determiner, Noun, Word, Preposition]
+  case class NP(spec:Option[DP], head:Either[Nbar,ConjP[NP]]) extends XP[Determiner, Noun, Word, Preposition]
   object NP {
-    def apply(spec:DP, head:Nbar) = new NP(Some(spec), head)
-    def apply(head:Nbar) = new NP(None, head)
-    def apply(head:Noun) = new NP(None, Nbar(head))
+    def apply(spec:DP, head:Nbar) = new NP(Some(spec), Left(head))
+    def apply(head:Nbar) = new NP(None, Left(head))
+    def apply(head:Noun) = new NP(None, Left(Nbar(head)))
   }
   case class Noun(text:String) extends Word
 }

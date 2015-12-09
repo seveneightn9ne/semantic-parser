@@ -11,19 +11,24 @@ object PredicateCalculus {
 
     /** All entities/relations in this universe */
     val entityMap = Map[EntityDesignation, Entity]()
-    val relationMap = Map[RelationDesignation, Relation]()
+    //val relationMap = Map[RelationDesignation, Relation]()
+    val relations = MutSet[Relation]()
 
     /** Map (e,R) to the truth value of Re */
     val applicationMap = Map[(Entity, Relation), Boolean]()
 
     /** Get an Entity/Relation from its Designation **/
     def apply(designation:EntityDesignation):Option[Entity] = entityMap get designation
-    def apply(designation:RelationDesignation):Option[Relation] = relationMap get designation
+    def apply(relation:Relation):Option[Relation] = relations contains relation match {
+      case true => Some(relation)
+      case false => None
+    }//TODO how is this even used
+
     /** Get the truth value of Re */
     def apply(e:Entity, r:Relation):Boolean = applicationMap((e,r))
 
     def put(e:Entity) = entityMap.put(e.designation, e)
-    def put(r:Relation) = relationMap.put(r.designation, r)
+    def put(r:Relation) = relations add r
 
     /** Assert that the entity is a member of the relation, or not */
     def relate(e:Entity, r:Relation, b:Boolean) = {
@@ -39,10 +44,10 @@ object PredicateCalculus {
     val relations:MutSet[String] = MutSet[String]()
     var lastHypothetical:Character = ('a'.toInt - 1).toChar
 
-    def relationDesignation(word:String):RelationConstant = {
+    def doesRelation(word:String):Relation = {
       val newrel = word.toUpperCase.filter{ c => !relations.contains(c.toString) }.head.toString
       relations add newrel
-      RelationConstant(newrel)
+      DoesRelation(newrel)
     }
     def entityDesignation(word:String):EntityConstant = {
       val newent = word.toLowerCase.filter{ c => !entities.contains(c.toString) }.head.toString
@@ -62,15 +67,20 @@ object PredicateCalculus {
   }
 
   sealed trait InA
-  case class Relation(designation:RelationDesignation) extends InA
-  case class Entity(designation:EntityDesignation) extends InA
-
-  sealed trait Designation
-  sealed trait RelationDesignation extends Designation {
+  sealed trait Relation extends InA {
     val value:String
   }
-  case class RelationConstant(value:String) extends RelationDesignation
-  case class RelationVariable(value:String) extends RelationDesignation // Not used
+  case class Entity(designation:EntityDesignation) extends InA
+
+  case class IsARelation(value:String) extends Relation
+  case class DoesRelation(value:String) extends Relation
+
+  sealed trait Designation
+  //sealed trait RelationDesignation extends Designation {
+  //  val value:String
+  //}
+  //case class RelationConstant(value:String) extends RelationDesignation
+  //case class RelationVariable(value:String) extends RelationDesignation // Not used
 
   sealed trait EntityDesignation extends Designation {
     val value:String
@@ -130,16 +140,15 @@ object PredicateCalculus {
     lazy val entities = p.entities
     override def toString = "¬" + p.toString
   }
-  case class Atom(relation:RelationDesignation, entity:EntityDesignation) extends Predicate {
+  case class Atom(relation:Relation, entity:EntityDesignation) extends Predicate {
     def evaluate(universe:A) = entity match {
       case _:EntityVariable => false // TODO exception
-      case c:EntityConstant => (universe(relation), universe(c)) match {
-        case (Some(r), Some(e)) => universe(e,r)
-        case _ => false
+      case c:EntityConstant => universe(c) match {
+        case Some(e) => universe(e,relation)
+        case _ => throw new RuntimeException("Tried to evaluate nonexistent designation")//TODO whyyy
       }
     }
-    // No members, despite this predicate asserting a membership:
-    lazy val relations = Set[Relation](Relation(relation) )
+    lazy val relations = Set[Relation](relation)
     lazy val entities = Set[Entity](Entity(entity))
     override def toString = relation.value + entity.value
   }
@@ -178,8 +187,8 @@ object PredicateCalculus {
   }
 
   def translate(sentence:Sentence):Predicate = sentence match {
-    case VP(Some(NP(None, Nbar(Left(Noun(n)), None))), Vbar(Left(Verb(v)), None, None)) =>
-      Atom(UniqueDesignations.relationDesignation(v), UniqueDesignations.entityDesignation(n))
+    case VP(Some(NP(None, Left(Nbar(Left(Noun(n)), None)))), Left(Vbar(Left(Verb(v)), None, None))) =>
+      Atom(UniqueDesignations.doesRelation(v), UniqueDesignations.entityDesignation(n))
     case _ => NullPredicate()
   }
 

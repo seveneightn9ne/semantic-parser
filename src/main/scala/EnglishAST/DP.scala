@@ -12,11 +12,11 @@ object DPrules {
     def apply(head:Determiner) = new Dbar(Left(head))
     def apply(head:Dbar) = new Dbar(Right(head))
   }
-  case class DP(spec:Option[NP], head:Dbar) extends XP[Noun, Determiner, Word, Word]
+  case class DP(spec:Option[NP], head:Either[Dbar,ConjP[DP]]) extends XP[Noun, Determiner, Word, Word]
   object DP {
-    def apply(spec:NP, head:Determiner) = new DP(Some(spec), Dbar(head))
-    def apply(head:Determiner) = new DP(None, Dbar(head))
-    def apply(head:Dbar) = new DP(None, Dbar(head))
+    def apply(spec:NP, head:Determiner) = new DP(Some(spec), Left(Dbar(head)))
+    def apply(head:Determiner) = new DP(None, Left(Dbar(head)))
+    def apply(head:Dbar) = new DP(None, Left(Dbar(head)))
   }
 
   case class Determiner extends Enumeration with ClosedClassWord {

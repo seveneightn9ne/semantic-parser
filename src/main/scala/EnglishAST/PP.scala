@@ -11,7 +11,7 @@ object PPrules {
     def apply(head:Preposition, complement:NP) = new Pbar(Left(head), Some(complement))
     def apply(head:Pbar) = new Pbar(Right(head))
   }
-  case class PP(head:Pbar) extends XP[Word, Preposition, Noun, Word] {
+  case class PP(head:Either[Pbar,ConjP[PP]]) extends XP[Word, Preposition, Noun, Word] {
     val spec = None // No Specs on PPs
   }
   case class Preposition extends Enumeration with ClosedClassWord {

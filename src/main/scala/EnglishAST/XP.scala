@@ -13,11 +13,20 @@ object XPrules {
    */
   trait XP[+S <: Word, +H <: Word, +C <: Word, +A <: Word] {
     val spec:Option[XP[Word, S, Word, Word]]
-    val head:Xbar[H, C, A]
+    val head:Either[Xbar[H, C, A],ConjP[XP[S,H,C,A]]]
 
-    def asText: String = spec match {
-      case Some(s) => s.asText + " " + head.asText
-      case _ => head.asText
+    def asText: String = (head, spec) match {
+      case (Left(h), Some(s)) => s.asText + " " + h.asText
+      case (Right(h), Some(s)) => s.asText + " " + h.asText
+      case (Left(h), None) => h.asText
+      case (Right(h), None) => h.asText
+    }
+  }
+
+  case class ConjP[+P <: XP[Word, Word, Word, Word]](preconj:Option[Preconj], left:P, conj:Conj, right:P) {
+    def asText:String = preconj match {
+      case Some(p) => p.text + left.asText + conj.text + right.asText
+      case _ => left.asText + conj.text + right.asText
     }
   }
 
@@ -46,6 +55,19 @@ object XPrules {
   trait ClosedClassWord extends Enumeration with Word {
     val text = this.toString.toLowerCase
   }
+
+  case class Conj extends ClosedClassWord
+  case class Preconj extends ClosedClassWord
+  //case class PreconjP(head:PreconjBar) extends XP[Word, Preconj, Word, Word] {
+  //  val spec = None
+  //}
+  //object PreconjP {
+  //  def apply(head:Preconj):PreconjP = PreconjP(PreconjBar(head))
+  //}
+  //case class PreconjBar(head:Preconj) extends Xbar[Preconj, Word, Word] {
+  //  val adjunct = None
+  //  val complement = None
+  //}
 
   type Sentence = VP
 }
