@@ -10,14 +10,10 @@ import VPrules._
 
 object EnglishParser extends SentenceParser with RegexParsers {
 
-  lazy val sentence = np ~ " " ~ vp <~ "." ^^ {(np,_, vp) => Sentence(np, vp)}
+  lazy val sentence = vp <~ "." ^^ {vp => vp}
   lazy val np = noun  ^^ { n => NP(n) }
   lazy val noun = "\\w+".r ^^ Noun
-  //lazy val vp = ( verb          ^^ {v => VP(v, None)}
-  //              | verb ~ " " ~ np ^^ {(v,_,np) => VP(v, Some(np))}
-  //)
-  //lazy val vp = verb ~ " " ~ np ^^ {(v,_,np) => VP(v, Some(np))}
-  lazy val vp = verb ^^ {v => VP(v)}
+  lazy val vp = np ~ " " ~ verb ^^ {(np,_,v) => VP(np, v)}
   lazy val verb = "\\w+".r ^^ Verb
 
   def parser = sentence

@@ -17,6 +17,7 @@ object VPrules {
   object VP {
     def apply(spec:NP, head:Vbar) = new VP(Some(spec), head)
     def apply(head:Verb) = new VP(None, Vbar(head))
+    def apply(spec:NP, head:Verb) = new VP(Some(spec), Vbar(head))
   }
   case class Verb(text:String) extends Word
 }

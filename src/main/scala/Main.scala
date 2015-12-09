@@ -11,7 +11,7 @@ object Main {
       VP(
         NP(Nbar(Noun("Jackie"))),
         Vbar(Verb("walks"))))*/
-   val s = Sentence(NP(Noun("Jackie")), VP(Verb("walks")))
+   val s = VP(NP(Noun("Jackie")), Verb("walks"))
    println(s)
    println(PredicateCalculus.translate(s))
   }

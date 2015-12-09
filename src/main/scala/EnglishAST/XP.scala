@@ -47,7 +47,5 @@ object XPrules {
     val text = this.toString.toLowerCase
   }
 
-  case class Sentence(np:NP, vp:VP) {
-    def asText = np.asText + " " + vp.asText + "."
-  }
+  type Sentence = VP
 }

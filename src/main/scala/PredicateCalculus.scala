@@ -134,7 +134,7 @@ object PredicateCalculus {
 
 
   def translate(sentence:Sentence):Predicate = sentence match {
-    case Sentence(NP(None, Nbar(Left(Noun(n)), None)), VP(None, Vbar(Left(Verb(v)), None, None))) =>
+    case VP(Some(NP(None, Nbar(Left(Noun(n)), None))), Vbar(Left(Verb(v)), None, None)) =>
       Atom(UniqueDesignations.relationDesignation(v), UniqueDesignations.entityDesignation(n))
     case _ => NullPredicate()
   }
