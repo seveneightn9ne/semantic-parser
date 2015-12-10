@@ -14,7 +14,7 @@ object NPrules {
   }
   case class NP(spec:Option[DP], head:Either[Nbar,ConjP[NP]]) extends XP[Determiner, Noun, Word, Preposition]
   object NP {
-    def apply(spec:DP, head:Nbar) = new NP(Some(spec), Left(head))
+    def apply(spec:DP, head:Noun) = new NP(Some(spec), Left(Nbar(Left(head))))
     def apply(head:Nbar) = new NP(None, Left(head))
     def apply(head:Noun) = new NP(None, Left(Nbar(head)))
   }

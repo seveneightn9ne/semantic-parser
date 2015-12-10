@@ -5,39 +5,41 @@ import collection.mutable.{Set => MutSet}
 import XPrules._
 import VPrules._
 import NPrules._
+import DPrules._
 
 object PredicateCalculus {
   class A {
 
     /** All entities/relations in this universe */
-    val entityMap = Map[EntityDesignation, Entity]()
+    val entities = MutSet[EntityConstant]()
     //val relationMap = Map[RelationDesignation, Relation]()
     val relations = MutSet[Relation]()
 
     /** Map (e,R) to the truth value of Re */
-    val applicationMap = Map[(Entity, Relation), Boolean]()
+    val applicationMap = Map[(EntityConstant, Relation), Boolean]()
 
     /** Get an Entity/Relation from its Designation **/
-    def apply(designation:EntityDesignation):Option[Entity] = entityMap get designation
-    def apply(relation:Relation):Option[Relation] = relations contains relation match {
-      case true => Some(relation)
-      case false => None
-    }//TODO how is this even used
+    //def apply(entity:Entity):Option[Entity] = entityMap get designation
+    //def apply(relation:Relation):Option[Relation] = relations contains relation match {
+    //  case true => Some(relation)
+    //  case false => None
+    //}//TODO how is this even used
 
     /** Get the truth value of Re */
-    def apply(e:Entity, r:Relation):Boolean = applicationMap((e,r))
+    def apply(e:EntityConstant, r:Relation):Boolean = applicationMap((e,r))
 
-    def put(e:Entity) = entityMap.put(e.designation, e)
+    def put(e:EntityConstant) = entities add e
     def put(r:Relation) = relations add r
 
     /** Assert that the entity is a member of the relation, or not */
-    def relate(e:Entity, r:Relation, b:Boolean) = {
+    def relate(e:EntityConstant, r:Relation, b:Boolean) = {
       this.put(e)
       this.put(r)
       applicationMap.put((e,r), b)
     }
 
-    override def toString = applicationMap.toString
+    override def toString = "\n[[Entities: " + entities.map(_.value).mkString(" ") + "\n" + (relations map {r =>
+      r.value + ": {" + (entities.filter{e => applicationMap((e, r))}.map{e => e.value}.mkString(" ")) + "}" + "\n"} mkString "") + "]]\n"
   }
   object UniqueDesignations {
     val entities:MutSet[String] = MutSet[String]()
@@ -49,7 +51,12 @@ object PredicateCalculus {
       relations add newrel
       DoesRelation(newrel)
     }
-    def entityDesignation(word:String):EntityConstant = {
+    def isARelation(word:String):Relation = {
+      val newrel = word.toUpperCase.filter{ c => !relations.contains(c.toString) }.head.toString
+      relations add newrel
+      IsARelation(newrel)
+    }
+    def entityConstant(word:String):EntityConstant = {
       val newent = word.toLowerCase.filter{ c => !entities.contains(c.toString) }.head.toString
       entities add newent
       EntityConstant(newent)
@@ -70,39 +77,44 @@ object PredicateCalculus {
   sealed trait Relation extends InA {
     val value:String
   }
-  case class Entity(designation:EntityDesignation) extends InA
+  sealed trait Entity extends InA {
+    val value:String
+  }
 
   case class IsARelation(value:String) extends Relation
   case class DoesRelation(value:String) extends Relation
 
-  sealed trait Designation
+  //sealed trait Designation
   //sealed trait RelationDesignation extends Designation {
   //  val value:String
   //}
   //case class RelationConstant(value:String) extends RelationDesignation
   //case class RelationVariable(value:String) extends RelationDesignation // Not used
 
-  sealed trait EntityDesignation extends Designation {
-    val value:String
-  }
-  case class EntityConstant(value:String) extends EntityDesignation
-  case class EntityVariable(value:String) extends EntityDesignation
+  //sealed trait EntityDesignation extends Designation {
+  //  val value:String
+  //}
+  case class EntityConstant(value:String) extends Entity
+  case class EntityVariable(value:String) extends Entity
 
   //val universes:Set[A] = Set[A]()
 
   sealed trait Predicate {
     def evaluate(universe:A): Boolean
+    def replace(v:EntityVariable, e:EntityConstant):Predicate
     val relations:Set[Relation]
-    val entities:Set[Entity]
+    val entities:Set[EntityConstant]
   }
   case class Conjunction(a:Predicate, b:Predicate) extends Predicate {
     def evaluate(universe:A) = a.evaluate(universe) && b.evaluate(universe)
+    def replace(v:EntityVariable, e:EntityConstant):Predicate = Conjunction(a.replace(v,e), b.replace(v,e))
     lazy val relations = a.relations ++ b.relations
     lazy val entities = a.entities ++ b.entities
     override def toString = "(" + a.toString + " & " + b.toString + ")"
   }
   case class Disjunction(a:Predicate, b:Predicate) extends Predicate {
     def evaluate(universe:A) = a.evaluate(universe) || b.evaluate(universe)
+    def replace(v:EntityVariable, e:EntityConstant):Predicate = Disjunction(a.replace(v,e), b.replace(v,e))
     lazy val relations = a.relations ++ b.relations
 
     lazy val entities = a.entities ++ b.entities
@@ -111,51 +123,61 @@ object PredicateCalculus {
   case class Existential(v:EntityVariable, p:Predicate) extends Predicate {
     //def evaluate = A.entities +  ^^ {e => p.replace(v, e).evaluate}.foldLeft(false, ||)
     def evaluate(universe:A) = false // TODO
+    def replace(v1:EntityVariable, e:EntityConstant):Predicate = Existential(v, p.replace(v1, e))
     lazy val relations = p.relations
-    lazy val entities = p.entities + Entity(UniqueDesignations.hypotheticalDesignation)
-    override def toString = "(∃" + v.toString + ")" + p.toString
+    lazy val entities = p.entities + UniqueDesignations.hypotheticalDesignation + UniqueDesignations.hypotheticalDesignation
+    override def toString = "(∃" + v.value + ")" + p.toString
   }
   case class Universal(v:EntityVariable, p:Predicate) extends Predicate {
     //def evaluate(universe:A) = universe.entities ^^ {e => p.replace(v, e).evaluate}.foldLeft(true, &&)
-    def evaluate(universe:A) = false // TODO
+    def evaluate(universe:A) = universe.entities.forall(e => p.replace(v,e).evaluate(universe))
+    def replace(v1:EntityVariable, e:EntityConstant):Predicate = Universal(v, p.replace(v1,e))
     lazy val relations = p.relations
-    lazy val entities = p.entities // TODO is this right? I think so...
-    override def toString = "(∀" + v.toString + ")" + p.toString
+    lazy val entities = p.entities + UniqueDesignations.hypotheticalDesignation
+    override def toString = "(∀" + v.value + ")" + p.toString
   }
   case class Conditional(a:Predicate, b:Predicate) extends Predicate {
     def evaluate(universe:A) = b.evaluate(universe) || !a.evaluate(universe)
+    def replace(v:EntityVariable, e:EntityConstant):Predicate = Conditional(a.replace(v,e), b.replace(v,e))
     lazy val relations = a.relations ++ b.relations
     lazy val entities = a.entities ++ b.entities
     override def toString = "(" + a.toString + " → " + b.toString + ")"
   }
   case class Biconditional(a:Predicate, b:Predicate) extends Predicate {
     def evaluate(universe:A) = a.evaluate(universe) == b.evaluate(universe)
+    def replace(v:EntityVariable, e:EntityConstant):Predicate = Biconditional(a.replace(v,e), b.replace(v,e))
     lazy val relations = a.relations ++ b.relations
     lazy val entities = a.entities ++ b.entities
     override def toString = "(" + a.toString + " ↔ " + b.toString + ")"
   }
   case class Negation(p:Predicate) extends Predicate {
     def evaluate(universe:A) = !p.evaluate(universe)
+    def replace(v:EntityVariable, e:EntityConstant):Predicate = Negation(p.replace(v,e))
     lazy val relations = p.relations
     lazy val entities = p.entities
     override def toString = "¬" + p.toString
   }
-  case class Atom(relation:Relation, entity:EntityDesignation) extends Predicate {
+  case class Atom(relation:Relation, entity:Entity) extends Predicate {
     def evaluate(universe:A) = entity match {
       case _:EntityVariable => false // TODO exception
-      case c:EntityConstant => universe(c) match {
-        case Some(e) => universe(e,relation)
-        case _ => throw new RuntimeException("Tried to evaluate nonexistent designation")//TODO whyyy
-      }
+      case c:EntityConstant => universe(c,relation)
+    }
+    def replace(v:EntityVariable, e:EntityConstant):Predicate = entity match {
+      case `v` => Atom(relation, e)
+      case _ => this
     }
     lazy val relations = Set[Relation](relation)
-    lazy val entities = Set[Entity](Entity(entity))
+    lazy val entities = entity match {
+      case c:EntityConstant => Set[EntityConstant](c)
+      case _ => Set[EntityConstant]()
+    }
     override def toString = relation.value + entity.value
   }
   case class NullPredicate extends Predicate {
-    val entities = Set[Entity]()
+    val entities = Set[EntityConstant]()
     val relations = Set[Relation]()
     def evaluate(u:A) = false
+    def replace(v:EntityVariable, e:EntityConstant) = this
   }
 
   /**
@@ -164,9 +186,9 @@ object PredicateCalculus {
   //def incorporate(p: Predicate)
 
   def extractRelations(predicates:Set[Predicate]):Set[Relation] = predicates flatMap {p => p.relations}
-  def extractEntities(predicates:Set[Predicate]):Set[Entity] = predicates flatMap {p => p.entities}
+  def extractEntities(predicates:Set[Predicate]):Set[EntityConstant] = predicates flatMap {p => p.entities}
 
-  def allUniverses(e:Set[Entity], r:Set[Relation]):Set[A] = {
+  def allUniverses(e:Set[EntityConstant], r:Set[Relation]):Set[A] = {
     val entity = e.toIndexedSeq
     val relation = r.toIndexedSeq
     //println(Utils.refeed[Int](10, x=>x+1, 0))
@@ -178,6 +200,8 @@ object PredicateCalculus {
         bitstring.indices.foreach { i =>
           universe.relate(entity(i % e.size), relation(i / e.size), bitstring(i))
         }
+        //println(bitstring)
+        //println(universe)
         universe
   }}
 
@@ -187,8 +211,35 @@ object PredicateCalculus {
   }
 
   def translate(sentence:Sentence):Predicate = sentence match {
-    case VP(Some(NP(None, Left(Nbar(Left(Noun(n)), None)))), Left(Vbar(Left(Verb(v)), None, None))) =>
-      Atom(UniqueDesignations.doesRelation(v), UniqueDesignations.entityDesignation(n))
+
+    // Simple intransitive, e.g. "John eats" -> Ej
+    case VP(
+      Some(NP(None,
+        Left(Nbar(
+          Left(Noun(n)), None)))),
+      Left(Vbar(
+        Left(Verb(v)), None, None))) =>
+
+      Atom(
+        UniqueDesignations.doesRelation(v),
+        UniqueDesignations.entityConstant(n))
+
+    // Universal with "every", e.g. "Every man eats" -> (∀x)(Mx → Ex)
+    case VP(
+      Some(NP(
+        Some(DP(None,
+          Left(Dbar(Left(Determiner(DValues.Every)))))),
+        Left(Nbar(
+          Left(Noun(n)), None)))),
+      Left(Vbar(
+        Left(Verb(v)), None, None))) => {
+
+      val variable = UniqueDesignations.variableDesignation
+      Universal(variable,
+        Conditional(
+          Atom(UniqueDesignations.isARelation(n), variable),
+          Atom(UniqueDesignations.isARelation(v), variable)))
+    }
     case _ => NullPredicate()
   }
 
