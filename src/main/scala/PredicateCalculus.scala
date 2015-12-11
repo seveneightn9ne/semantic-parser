@@ -38,28 +38,40 @@ object PredicateCalculus {
       applicationMap.put((e,r), b)
     }
 
-    override def toString = "\n[[Entities: " + entities.map(_.value).mkString(" ") + "\n" + (relations map {r =>
-      r.value + ": {" + (entities.filter{e => applicationMap((e, r))}.map{e => e.value}.mkString(" ")) + "}" + "\n"} mkString "") + "]]\n"
+    override def toString = "\n[[Entities: " + entities.map(_.value).mkString(" ") + "\n" +
+        (relations map {r => r.value + ": {" + (entities.filter{
+          e => applicationMap((e, r))}.map{e => e.value}.mkString(" ")) +
+        "}" + "\n"} mkString "") + "]]\n"
   }
   object UniqueDesignations {
-    val entities:MutSet[String] = MutSet[String]()
-    val relations:MutSet[String] = MutSet[String]()
+    val entities:Map[String,String] = Map[String,String]()
+    //val relations:MutSet[String] = MutSet[String]()
+    val relations:Map[String,String] = Map[String,String]()
     var lastHypothetical:Character = ('a'.toInt - 1).toChar
 
-    def doesRelation(word:String):Relation = {
-      val newrel = word.toUpperCase.filter{ c => !relations.contains(c.toString) }.head.toString
-      relations add newrel
-      DoesRelation(newrel)
+    def doesRelation(word:String):Relation = relations get word match {
+      case Some(rel) => DoesRelation(rel)
+      case _ => {
+        val newrel = word.toUpperCase.filter{ c => !relations.contains(c.toString) }.head.toString
+        relations.put(word,newrel)
+        DoesRelation(newrel)
+      }
     }
-    def isARelation(word:String):Relation = {
-      val newrel = word.toUpperCase.filter{ c => !relations.contains(c.toString) }.head.toString
-      relations add newrel
-      IsARelation(newrel)
+    def isARelation(word:String):Relation = relations get word match {
+      case Some(rel) => IsARelation(rel)
+      case _ => {
+        val newrel = word.toUpperCase.filter{ c => !relations.contains(c.toString) }.head.toString
+        relations.put(word,newrel)
+        IsARelation(newrel)
+      }
     }
-    def entityConstant(word:String):EntityConstant = {
-      val newent = word.toLowerCase.filter{ c => !entities.contains(c.toString) }.head.toString
-      entities add newent
-      EntityConstant(newent)
+    def entityConstant(word:String):EntityConstant = entities get word match {
+      case Some(ent) => EntityConstant(ent)
+      case _ => {
+        val newent = word.toLowerCase.filter{ c => !entities.contains(c.toString) }.head.toString
+        entities.put(word,newent)
+        EntityConstant(newent)
+      }
     }
     def hypotheticalDesignation:EntityConstant = {
       lastHypothetical = (lastHypothetical.toInt + 1).toChar
@@ -67,8 +79,8 @@ object PredicateCalculus {
     }
     def variableDesignation:EntityVariable = {
       val newvar = (('x' to 'z') ++ ('a' to 'w')).filter{
-        x => !entities.contains(x.toString)}.head.toString
-      entities add newvar
+        x => !entities.values.toSet.contains(x.toString)}.head.toString
+      entities.put(newvar,newvar)
       EntityVariable(newvar)
     }
   }
@@ -240,6 +252,22 @@ object PredicateCalculus {
           Atom(UniqueDesignations.isARelation(n), variable),
           Atom(UniqueDesignations.isARelation(v), variable)))
     }
+
+    // IsA relation, e.g. John is a man.
+    case VP(
+      Some(NP(None,
+        Left(Nbar(
+          Left(Noun(subj)), None)))),
+      Left(Vbar(
+        Left(Verb("is")),
+        Some(NP(
+          Some(DP(None,
+            Left(Dbar(Left(Determiner(DValues.A)))))),
+          Left(Nbar(
+            Left(Noun(obj)), None)))), None))) =>
+      Atom(
+        UniqueDesignations.isARelation(obj),
+        UniqueDesignations.entityConstant(subj))
     case _ => NullPredicate()
   }
 

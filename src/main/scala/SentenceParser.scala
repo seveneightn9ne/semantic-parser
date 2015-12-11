@@ -11,7 +11,7 @@ trait SentenceParser extends Parsers {
       println(file)
       println("Output:")
       val results = parser(LineStream(Source fromFile file))
-      if (results exists {_.isInstanceOf[Success[Sentence]]}) {
+      if (results exists {_.isInstanceOf[Success[List[Sentence]]]}) {
 	handleSuccesses(for (Success(tree, _) <- results) yield tree)
       } else {
 	val sorted = results.toList sortWith {_.tail.length < _.tail.length}
@@ -25,13 +25,13 @@ trait SentenceParser extends Parsers {
     }
   }
 
-  def parser: Parser[Sentence]
+  def parser: Parser[List[Sentence]]
 
-  def handleSuccesses(forest: Stream[Sentence]) {
+  def handleSuccesses(forest: Stream[List[Sentence]]) {
     val errors = mutable.Set[String]()
 
-    val status = for (sentence <- forest) yield {
-      Some(sentence)
+    val status = for (sentences <- forest) yield {
+      Some(sentences)
     }
 
     val results = status flatMap { x => x }
@@ -42,12 +42,13 @@ trait SentenceParser extends Parsers {
       }
     } else if (results.length == 1) {
       //println("  " + results.head.toString)
-      println("  " + results.head.asText)
-      val predicate = PredicateCalculus.translate(results.head)
-      println("  " + predicate)
-      println("  " + PredicateCalculus.possibleUniverses(Set(predicate)))
+      println("  " + results.head.map(s => s.asText).mkString(". "))
+      val predicates = results.head.map(s => PredicateCalculus.translate(s))
+      println("  " + predicates.mkString("\n  "))
+      println("  " + PredicateCalculus.possibleUniverses(predicates.toSet))
     } else {
       printf("  parse error: Ambiguous parse: %s valid trees%n", results.length.toString)
+      results.foreach(l => println(l))
     }
   }
 }
