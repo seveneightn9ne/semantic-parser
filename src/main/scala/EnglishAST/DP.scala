@@ -29,5 +29,7 @@ object DPrules {
   }
   import DValues._
 
-  case class Determiner(value:DValue) extends ClosedClassWord
+  case class Determiner(value:DValue) extends ClosedClassWord {
+    override def asText = value.toString.toLowerCase
+  }
 }
