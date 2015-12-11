@@ -45,7 +45,7 @@ trait SentenceParser extends Parsers {
       println("  " + results.head.map(s => s.asText).mkString(". "))
       val predicates = results.head.map(s => PredicateCalculus.translate(s))
       println("  " + predicates.mkString("\n  "))
-      println("  " + PredicateCalculus.possibleUniverses(predicates.toSet))
+      println("  Therefore, " + PredicateCalculus.generateConclusions(predicates.toSet).mkString(". "))
     } else {
       printf("  parse error: Ambiguous parse: %s valid trees%n", results.length.toString)
       results.foreach(l => println(l))

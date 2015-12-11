@@ -217,9 +217,25 @@ object PredicateCalculus {
         universe
   }}
 
-  def possibleUniverses(predicates:Set[Predicate]) = allUniverses(
+  def possibleUniverses(predicates:Set[Predicate]):Set[A] = allUniverses(
     extractEntities(predicates), extractRelations(predicates)).filter{u =>
       predicates.forall{p => p.evaluate(u)}
+  }
+
+  def generateAtoms(e:Set[EntityConstant], r:Set[Relation]):Set[Predicate] = e flatMap {entity =>
+    r map {relation => Atom(relation, entity)}}
+
+  def validConclusions(predicates:Set[Predicate], universes:Set[A]):Set[Predicate] =
+    predicates filter { p =>
+      universes.forall(u => p.evaluate(u))}
+
+  def isInteresting(conclusion:Predicate, priors:Set[Predicate]):Boolean = !priors.contains(conclusion)
+
+  def generateConclusions(priors:Set[Predicate]):Set[Predicate] = {
+    val universes:Set[A] = possibleUniverses(priors)
+    validConclusions(generateAtoms(
+      universes.head.entities.toSet, universes.head.relations.toSet), universes).filter {p =>
+      isInteresting(p, priors)}
   }
 
   def translate(sentence:Sentence):Predicate = sentence match {
