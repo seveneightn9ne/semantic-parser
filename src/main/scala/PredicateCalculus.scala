@@ -18,13 +18,6 @@ object PredicateCalculus {
     /** Map (e,R) to the truth value of Re */
     val applicationMap = Map[(EntityConstant, Relation), Boolean]()
 
-    /** Get an Entity/Relation from its Designation **/
-    //def apply(entity:Entity):Option[Entity] = entityMap get designation
-    //def apply(relation:Relation):Option[Relation] = relations contains relation match {
-    //  case true => Some(relation)
-    //  case false => None
-    //}//TODO how is this even used
-
     /** Get the truth value of Re */
     def apply(e:EntityConstant, r:Relation):Boolean = applicationMap((e,r))
 
@@ -43,57 +36,13 @@ object PredicateCalculus {
           e => applicationMap((e, r))}.map{e => e.value}.mkString(" ")) +
         "}" + "\n"} mkString "") + "]]\n"
   }
-  object UniqueDesignations {
-    val entities:Map[String,String] = Map[String,String]()
-    //val relations:MutSet[String] = MutSet[String]()
-    val relations:Map[String,String] = Map[String,String]()
 
-    def name(r:Relation):Option[String] = relations map {_.swap} get r.value
-    def name(e:EntityConstant):Option[String] = entities map {_.swap} get e.value
-    var lastHypothetical:Character = ('a'.toInt - 1).toChar
 
-    def doesRelation(word:String):Relation = relations get word match {
-      case Some(rel) => DoesRelation(rel)
-      case _ => {
-        val newrel = word.toUpperCase.filter{ c => !relations.contains(c.toString) }.head.toString
-        relations.put(word,newrel)
-        DoesRelation(newrel)
-      }
-    }
-    def isARelation(word:String):Relation = relations get word match {
-      case Some(rel) => IsARelation(rel)
-      case _ => {
-        val newrel = word.toUpperCase.filter{ c => !relations.contains(c.toString) }.head.toString
-        relations.put(word,newrel)
-        IsARelation(newrel)
-      }
-    }
-    def entityConstant(word:String):EntityConstant = entities get word match {
-      case Some(ent) => EntityConstant(ent)
-      case _ => {
-        val newent = word.toLowerCase.filter{ c => !entities.contains(c.toString) }.head.toString
-        entities.put(word,newent)
-        EntityConstant(newent)
-      }
-    }
-    def hypotheticalDesignation:EntityConstant = {
-      lastHypothetical = (lastHypothetical.toInt + 1).toChar
-      EntityConstant("hypothetical_" + lastHypothetical.toString)
-    }
-    def variableDesignation:EntityVariable = {
-      val newvar = (('x' to 'z') ++ ('a' to 'w')).filter{
-        x => !entities.values.toSet.contains(x.toString)}.head.toString
-      entities.put(newvar,newvar)
-      EntityVariable(newvar)
-    }
-  }
-
-  sealed trait InA
-  sealed trait Relation extends InA {
+  sealed trait Relation {
     val value:String
     def toEnglish = UniqueDesignations.name(this).getOrElse(value)
   }
-  sealed trait Entity extends InA {
+  sealed trait Entity {
     val value:String
     def toEnglish:String
   }
@@ -101,25 +50,12 @@ object PredicateCalculus {
   case class IsARelation(value:String) extends Relation
   case class DoesRelation(value:String) extends Relation
 
-
-  //sealed trait Designation
-  //sealed trait RelationDesignation extends Designation {
-  //  val value:String
-  //}
-  //case class RelationConstant(value:String) extends RelationDesignation
-  //case class RelationVariable(value:String) extends RelationDesignation // Not used
-
-  //sealed trait EntityDesignation extends Designation {
-  //  val value:String
-  //}
   case class EntityConstant(value:String) extends Entity {
     def toEnglish = UniqueDesignations.name(this).getOrElse(value)
   }
   case class EntityVariable(value:String) extends Entity {
     def toEnglish = value
   }
-
-  //val universes:Set[A] = Set[A]()
 
   sealed trait Predicate {
     def evaluate(universe:A): Boolean
@@ -219,28 +155,18 @@ object PredicateCalculus {
     def toEnglish = "NULL PREDICATE"
   }
 
-  /**
-   * Add p to the knowledge of the world
-   */
-  //def incorporate(p: Predicate)
-
   def extractRelations(predicates:Set[Predicate]):Set[Relation] = predicates flatMap {p => p.relations}
   def extractEntities(predicates:Set[Predicate]):Set[EntityConstant] = predicates flatMap {p => p.entities}
 
   def allUniverses(e:Set[EntityConstant], r:Set[Relation]):Set[A] = {
     val entity = e.toIndexedSeq
     val relation = r.toIndexedSeq
-    //println(Utils.refeed[Int](10, x=>x+1, 0))
-    //println(e.size*r.size)
-    //println(Utils.refeed(2, Utils.expandBitstring, Set[List[Boolean]](List())))
     Utils.refeed[Set[List[Boolean]]](
       e.size * r.size, Utils.expandBitstring, Set[List[Boolean]](List())) map { bitstring =>
         val universe = new A()
         bitstring.indices.foreach { i =>
           universe.relate(entity(i % e.size), relation(i / e.size), bitstring(i))
         }
-        //println(bitstring)
-        //println(universe)
         universe
   }}
 
@@ -252,6 +178,15 @@ object PredicateCalculus {
   def generateAtoms(e:Set[EntityConstant], r:Set[Relation]):Set[Predicate] = e flatMap {entity =>
     r flatMap {relation => List(Atom(relation, entity), Negation(Atom(relation, entity)))}}
 
+  def generateUniversalConditionals(from:Set[Relation]):Set[Predicate] = from flatMap {antecedent =>
+    from flatMap {consequent => antecedent match {
+      case `consequent` => None
+      case _ => {
+        val v = UniqueDesignations.variableDesignation
+        Some(Universal(v, Conditional(Atom(antecedent, v), Atom(consequent, v))))
+      }
+    }}}
+
   def validConclusions(predicates:Set[Predicate], universes:Set[A]):Set[Predicate] =
     predicates filter { p =>
       universes.forall(u => p.evaluate(u))}
@@ -260,8 +195,10 @@ object PredicateCalculus {
 
   def generateConclusions(priors:Set[Predicate]):Set[Predicate] = {
     val universes:Set[A] = possibleUniverses(priors)
-    validConclusions(generateAtoms(
-      universes.head.entities.toSet, universes.head.relations.toSet), universes).filter {p =>
+    val relations:Set[Relation] = universes.head.relations.toSet
+    val entities:Set[EntityConstant] = universes.head.entities.toSet
+    validConclusions(generateUniversalConditionals(relations) ++ generateAtoms(
+      entities, relations), universes).filter {p =>
       isInteresting(p, priors)}
   }
 }

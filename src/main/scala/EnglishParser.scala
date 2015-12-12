@@ -30,7 +30,8 @@ object EnglishParser extends SentenceParser with RegexParsers {
 
   // Words
   lazy val singulardet = ("[Ee]very".r ^^ {d => Determiner(DValues.Every)}
-    | "a".r ^^ {d => Determiner(DValues.A)})
+    | "a".r ^^ {d => Determiner(DValues.A)}
+    | "[Nn]o".r ^^ {d => Determiner(DValues.No)})
   lazy val pluraldet = ("[Aa]ll".r ^^ {d => Determiner(DValues.All)}
     | "[Ss]ome".r ^^ {d => Determiner(DValues.Some)}
     | "[Nn]o".r ^^ {d => Determiner(DValues.No)})
