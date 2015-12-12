@@ -34,8 +34,12 @@ object Translation {
     }
 
     // NP with determiner "a", given context, as in X is [a Y]
-    case (NP(Some(DP(None, Left(Dbar(Left(Determiner(DValues.A)))))), nbar), e) =>
-        translate(nbar, e)
+    case (NP(Some(DP(None, Left(Dbar(Left(Determiner(DValues.A)))))), nbar), Some(e)) =>
+      translate(nbar, Some(e))
+
+    // NP with no determiner, with context (as in "All Marines are candycanes")
+    case (NP(None, nbar), Some(e)) =>
+      translate(nbar, Some(e))
 
     // Forward conjunctions. Is that always right?
     case (NP(None, Right(conj)), e) =>
@@ -62,6 +66,10 @@ object Translation {
 
     // is ____ (the "s" in is was removed for being a 1st person present suffix)
     case (Vbar(Left(Verb("i",false)), Some(np), None), e)  =>
+        translate(np, e)
+
+    // are ___ (same as above with plural subject agreement)
+    case (Vbar(Left(Verb("are",true)), Some(np), None), e) =>
         translate(np, e)
 
     // Non branching Vbar
