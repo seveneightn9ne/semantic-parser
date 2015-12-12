@@ -185,7 +185,11 @@ object PredicateCalculus {
     lazy val relations = p.relations
     lazy val entities = p.entities
     override def toString = "¬" + p.toString
-    def toEnglish = "not " + p.toEnglish // lame
+    def toEnglish = p match {
+      case Atom(i:IsARelation,e) => e.toEnglish + " isn't a " + i.toEnglish
+      case Atom(d:DoesRelation,e) => e.toEnglish + " doesn't " + d.toEnglish
+      case _ => "not " + p.toEnglish // lame
+    }
   }
   case class Atom(relation:Relation, entity:Entity) extends Predicate {
     def evaluate(universe:A) = entity match {
@@ -246,7 +250,7 @@ object PredicateCalculus {
   }
 
   def generateAtoms(e:Set[EntityConstant], r:Set[Relation]):Set[Predicate] = e flatMap {entity =>
-    r map {relation => Atom(relation, entity)}}
+    r flatMap {relation => List(Atom(relation, entity), Negation(Atom(relation, entity)))}}
 
   def validConclusions(predicates:Set[Predicate], universes:Set[A]):Set[Predicate] =
     predicates filter { p =>

@@ -33,6 +33,15 @@ object Translation {
       Universal(newContext, Conditional(translate(nbar, Some(newContext)),translate(vbar, Some(newContext))))
     }
 
+    // Non-branching DP "No" -> Negative existential
+    case (VP(Some(NP(Some(
+        DP(None, Left(Dbar(Left(Determiner(DValues.No)))))),
+        Left(nbar))), vbar), None) => {
+      val newContext = UniqueDesignations.variableDesignation
+      Universal(newContext,
+        Conditional(translate(nbar, Some(newContext)), Negation(translate(vbar, Some(newContext)))))
+    }
+
     // NP with determiner "a", given context, as in X is [a Y]
     case (NP(Some(DP(None, Left(Dbar(Left(Determiner(DValues.A)))))), nbar), Some(e)) =>
       translate(nbar, Some(e))
