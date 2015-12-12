@@ -204,7 +204,7 @@ object PredicateCalculus {
     override def toString = relation.value + entity.value
     def toEnglish = relation match {
       case r:IsARelation => entity.toEnglish + " is a " + r.toEnglish
-      case r:DoesRelation => entity.toEnglish + " " + r.toEnglish + "s"
+      case r:DoesRelation => entity.toEnglish + " " + Verb(r.toEnglish,false).asText
     }
   }
   case class NullPredicate extends Predicate {

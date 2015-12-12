@@ -22,7 +22,10 @@ object VPrules {
   case class Verb(text:String, pluralSubjAgr:Boolean=false) extends Word {
     override def asText = pluralSubjAgr match {
       case true => text
-      case _ => text + "s"
+      case _ => text.takeRight(1) match {
+        case "y" => text.dropRight(1) + "ies"
+        case _ => text + "s"
+      }
     }
   }
 }
