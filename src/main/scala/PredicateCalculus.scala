@@ -204,7 +204,7 @@ object PredicateCalculus {
     override def toString = relation.value + entity.value
     def toEnglish = relation match {
       case r:IsARelation => entity.toEnglish + " is a " + r.toEnglish
-      case r:DoesRelation => entity.toEnglish + " " + r.toEnglish
+      case r:DoesRelation => entity.toEnglish + " " + r.toEnglish + "s"
     }
   }
   case class NullPredicate extends Predicate {
@@ -260,54 +260,4 @@ object PredicateCalculus {
       universes.head.entities.toSet, universes.head.relations.toSet), universes).filter {p =>
       isInteresting(p, priors)}
   }
-
-  def translate(sentence:Sentence):Predicate = sentence match {
-
-    // Simple intransitive, e.g. "John eats" -> Ej
-    case VP(
-      Some(NP(None,
-        Left(Nbar(
-          Left(Noun(n)), None)))),
-      Left(Vbar(
-        Left(Verb(v)), None, None))) =>
-
-      Atom(
-        UniqueDesignations.doesRelation(v),
-        UniqueDesignations.entityConstant(n))
-
-    // Universal with "every", e.g. "Every man eats" -> (∀x)(Mx → Ex)
-    case VP(
-      Some(NP(
-        Some(DP(None,
-          Left(Dbar(Left(Determiner(DValues.Every)))))),
-        Left(Nbar(
-          Left(Noun(n)), None)))),
-      Left(Vbar(
-        Left(Verb(v)), None, None))) => {
-
-      val variable = UniqueDesignations.variableDesignation
-      Universal(variable,
-        Conditional(
-          Atom(UniqueDesignations.isARelation(n), variable),
-          Atom(UniqueDesignations.doesRelation(v), variable)))
-    }
-
-    // IsA relation, e.g. John is a man.
-    case VP(
-      Some(NP(None,
-        Left(Nbar(
-          Left(Noun(subj)), None)))),
-      Left(Vbar(
-        Left(Verb("is")),
-        Some(NP(
-          Some(DP(None,
-            Left(Dbar(Left(Determiner(DValues.A)))))),
-          Left(Nbar(
-            Left(Noun(obj)), None)))), None))) =>
-      Atom(
-        UniqueDesignations.isARelation(obj),
-        UniqueDesignations.entityConstant(subj))
-    case _ => NullPredicate()
-  }
-
 }

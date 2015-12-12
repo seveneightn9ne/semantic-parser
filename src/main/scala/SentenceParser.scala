@@ -43,6 +43,7 @@ trait SentenceParser extends Parsers {
     } else if (results.length == 1) {
       //println("  " + results.head.toString)
       println("  " + results.head.map(s => s.asText).mkString(". "))
+      println("  " + results.head.mkString("\n"))
       val predicates = results.head.map(s => Translation.translate(s, None))
       println("  " + predicates.mkString("\n  "))
       val conclusions = PredicateCalculus.generateConclusions(predicates.toSet)

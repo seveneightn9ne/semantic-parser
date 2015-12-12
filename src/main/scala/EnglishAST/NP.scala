@@ -19,5 +19,10 @@ object NPrules {
     def apply(head:Noun) = new NP(None, Left(Nbar(head)))
     def apply(head:ConjP[NP]) = new NP(None, Right(head))
   }
-  case class Noun(text:String) extends Word
+  case class Noun(text:String, plural:Boolean=false) extends Word {
+    override def asText = plural match {
+      case true => text + "s"
+      case _ => text
+    }
+  }
 }

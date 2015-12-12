@@ -1,3 +1,3 @@
-John#is#both#a#man#and#a#farmer.
-Every#man#eats.
+John is both a man and a farmer.
+Every man eats.
 

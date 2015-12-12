@@ -19,5 +19,10 @@ object VPrules {
     def apply(head:Verb) = new VP(None, Left(Vbar(head)))
     def apply(spec:NP, head:Verb) = new VP(Some(spec), Left(Vbar(head)))
   }
-  case class Verb(text:String) extends Word
+  case class Verb(text:String, pluralSubjAgr:Boolean=false) extends Word {
+    override def asText = pluralSubjAgr match {
+      case true => text
+      case _ => text + "s"
+    }
+  }
 }

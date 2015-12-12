@@ -30,4 +30,8 @@ object DPrules {
   import DValues._
 
   case class Determiner(value:D) extends ClosedClassWord[D]
+  object Determiner{
+    def values = DValues.values.map(_.toString) ++ DValues.values.map(_.toString.toLowerCase)
+    def isnt(thing:String):Boolean = !values.contains(thing)
+  }
 }

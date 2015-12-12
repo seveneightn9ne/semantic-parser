@@ -1,2 +1,2 @@
-Everyone#is#a#man#or#a#woman.
-Mary#exists.
+Everyone is a man or a woman.
+Mary exists.
