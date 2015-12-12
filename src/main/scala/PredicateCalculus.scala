@@ -47,6 +47,9 @@ object PredicateCalculus {
     val entities:Map[String,String] = Map[String,String]()
     //val relations:MutSet[String] = MutSet[String]()
     val relations:Map[String,String] = Map[String,String]()
+
+    def name(r:Relation):Option[String] = relations map {_.swap} get r.value
+    def name(e:EntityConstant):Option[String] = entities map {_.swap} get e.value
     var lastHypothetical:Character = ('a'.toInt - 1).toChar
 
     def doesRelation(word:String):Relation = relations get word match {
@@ -88,13 +91,16 @@ object PredicateCalculus {
   sealed trait InA
   sealed trait Relation extends InA {
     val value:String
+    def toEnglish = UniqueDesignations.name(this).getOrElse(value)
   }
   sealed trait Entity extends InA {
     val value:String
+    def toEnglish:String
   }
 
   case class IsARelation(value:String) extends Relation
   case class DoesRelation(value:String) extends Relation
+
 
   //sealed trait Designation
   //sealed trait RelationDesignation extends Designation {
@@ -106,8 +112,12 @@ object PredicateCalculus {
   //sealed trait EntityDesignation extends Designation {
   //  val value:String
   //}
-  case class EntityConstant(value:String) extends Entity
-  case class EntityVariable(value:String) extends Entity
+  case class EntityConstant(value:String) extends Entity {
+    def toEnglish = UniqueDesignations.name(this).getOrElse(value)
+  }
+  case class EntityVariable(value:String) extends Entity {
+    def toEnglish = value
+  }
 
   //val universes:Set[A] = Set[A]()
 
@@ -116,6 +126,7 @@ object PredicateCalculus {
     def replace(v:EntityVariable, e:EntityConstant):Predicate
     val relations:Set[Relation]
     val entities:Set[EntityConstant]
+    def toEnglish:String
   }
   case class Conjunction(a:Predicate, b:Predicate) extends Predicate {
     def evaluate(universe:A) = a.evaluate(universe) && b.evaluate(universe)
@@ -123,6 +134,7 @@ object PredicateCalculus {
     lazy val relations = a.relations ++ b.relations
     lazy val entities = a.entities ++ b.entities
     override def toString = "(" + a.toString + " & " + b.toString + ")"
+    def toEnglish = a.toEnglish + " and " + b.toEnglish
   }
   case class Disjunction(a:Predicate, b:Predicate) extends Predicate {
     def evaluate(universe:A) = a.evaluate(universe) || b.evaluate(universe)
@@ -131,6 +143,7 @@ object PredicateCalculus {
 
     lazy val entities = a.entities ++ b.entities
     override def toString = "(" + a.toString + " | " + b.toString + ")"
+    def toEnglish = "either " + a.toEnglish + ", or " + b.toEnglish
   }
   case class Existential(v:EntityVariable, p:Predicate) extends Predicate {
     //def evaluate = A.entities +  ^^ {e => p.replace(v, e).evaluate}.foldLeft(false, ||)
@@ -139,6 +152,7 @@ object PredicateCalculus {
     lazy val relations = p.relations
     lazy val entities = p.entities + UniqueDesignations.hypotheticalDesignation + UniqueDesignations.hypotheticalDesignation
     override def toString = "(∃" + v.value + ")" + p.toString
+    def toEnglish = "there is some entity " + v.value + " such that " + p.toEnglish
   }
   case class Universal(v:EntityVariable, p:Predicate) extends Predicate {
     //def evaluate(universe:A) = universe.entities ^^ {e => p.replace(v, e).evaluate}.foldLeft(true, &&)
@@ -147,6 +161,7 @@ object PredicateCalculus {
     lazy val relations = p.relations
     lazy val entities = p.entities + UniqueDesignations.hypotheticalDesignation
     override def toString = "(∀" + v.value + ")" + p.toString
+    def toEnglish = "for all entities " + v.value + ", " + p.toEnglish
   }
   case class Conditional(a:Predicate, b:Predicate) extends Predicate {
     def evaluate(universe:A) = b.evaluate(universe) || !a.evaluate(universe)
@@ -154,6 +169,7 @@ object PredicateCalculus {
     lazy val relations = a.relations ++ b.relations
     lazy val entities = a.entities ++ b.entities
     override def toString = "(" + a.toString + " → " + b.toString + ")"
+    def toEnglish = "if " + a.toEnglish + ", then " + b.toEnglish
   }
   case class Biconditional(a:Predicate, b:Predicate) extends Predicate {
     def evaluate(universe:A) = a.evaluate(universe) == b.evaluate(universe)
@@ -161,6 +177,7 @@ object PredicateCalculus {
     lazy val relations = a.relations ++ b.relations
     lazy val entities = a.entities ++ b.entities
     override def toString = "(" + a.toString + " ↔ " + b.toString + ")"
+    def toEnglish = a.toEnglish + " if and only if " + b.toString
   }
   case class Negation(p:Predicate) extends Predicate {
     def evaluate(universe:A) = !p.evaluate(universe)
@@ -168,6 +185,7 @@ object PredicateCalculus {
     lazy val relations = p.relations
     lazy val entities = p.entities
     override def toString = "¬" + p.toString
+    def toEnglish = "not " + p.toEnglish // lame
   }
   case class Atom(relation:Relation, entity:Entity) extends Predicate {
     def evaluate(universe:A) = entity match {
@@ -184,12 +202,17 @@ object PredicateCalculus {
       case _ => Set[EntityConstant]()
     }
     override def toString = relation.value + entity.value
+    def toEnglish = relation match {
+      case r:IsARelation => entity.toEnglish + " is a " + r.toEnglish
+      case r:DoesRelation => entity.toEnglish + " " + r.toEnglish
+    }
   }
   case class NullPredicate extends Predicate {
     val entities = Set[EntityConstant]()
     val relations = Set[Relation]()
     def evaluate(u:A) = false
     def replace(v:EntityVariable, e:EntityConstant) = this
+    def toEnglish = "NULL PREDICATE"
   }
 
   /**
@@ -266,7 +289,7 @@ object PredicateCalculus {
       Universal(variable,
         Conditional(
           Atom(UniqueDesignations.isARelation(n), variable),
-          Atom(UniqueDesignations.isARelation(v), variable)))
+          Atom(UniqueDesignations.doesRelation(v), variable)))
     }
 
     // IsA relation, e.g. John is a man.

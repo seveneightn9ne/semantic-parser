@@ -17,6 +17,7 @@ object NPrules {
     def apply(spec:DP, head:Noun) = new NP(Some(spec), Left(Nbar(Left(head))))
     def apply(head:Nbar) = new NP(None, Left(head))
     def apply(head:Noun) = new NP(None, Left(Nbar(head)))
+    def apply(head:ConjP[NP]) = new NP(None, Right(head))
   }
   case class Noun(text:String) extends Word
 }

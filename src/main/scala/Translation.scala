@@ -1,0 +1,54 @@
+package semanticparser
+
+import XPrules._
+import NPrules._
+import DPrules._
+import VPrules._
+import PredicateCalculus._
+
+object Translation {
+  def translate(phrase:XP[Word,Word,Word,Word], context:Option[Entity]):Predicate = (phrase, context) match {
+
+    // Constant NP subject
+    case (VP(Some(NP(None, Left(Nbar(Left(Noun(n)), None)))), vbar), None) =>
+      translate(vbar, Some(UniqueDesignations.entityConstant(n)))
+
+    // Non-Branching DP Every
+    case (VP(Some(NP(Some(DP(None, Left(Dbar(Left(Determiner(DValues.Every)))))), Left(nbar))), vbar), None) => {
+      val newContext = UniqueDesignations.variableDesignation
+      Universal(newContext, Conditional(translate(nbar, Some(newContext)),translate(vbar, Some(newContext))))
+    }
+
+    // NP with determiner "a", given context, as in X is [a Y]
+    case (NP(Some(DP(None, Left(Dbar(Left(Determiner(DValues.A)))))), nbar), e) =>
+        translate(nbar, e)
+
+    case _ => throw new RuntimeException("Can't translate XP phrase: " + phrase.asText)
+
+  }
+
+  def translate(phrase:Either[Xbar[Word,Word,Word], ConjP[XP[Word,Word,Word,Word]]], context:Option[Entity]):Predicate = (phrase, context) match {
+    case (Left(xbar), c) => translate(xbar, c)
+    case (Right(ConjP(preconj,l:NP,Conj(ConjV.And),r:NP)), e) =>
+      Conjunction(translate(l, e), translate(r, e))
+    case _ => throw new RuntimeException("Can't translate conjunction: " + phrase)
+  }
+
+  def translate(phrase:Xbar[Word,Word,Word], context:Option[Entity]):Predicate = (phrase,context) match {
+
+    // Non Branching Nbar
+    case (Nbar(Left(Noun(n)), None), Some(e)) =>
+      Atom(UniqueDesignations.isARelation(n), e)
+
+    // is ____
+    case (Vbar(Left(Verb("is")), Some(np), None), e)  =>
+        translate(np, e)
+
+    // Non branching Vbar
+    case (Vbar(Left(Verb(v)), None, None), Some(entity)) =>
+      Atom(UniqueDesignations.doesRelation(v), entity)
+
+    case _ => throw new RuntimeException("Can't translate Xbar phrase: " + phrase.asText)
+  }
+
+}

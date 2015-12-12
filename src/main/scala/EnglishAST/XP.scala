@@ -56,18 +56,24 @@ object XPrules {
     val text = this.toString.toLowerCase
   }
 
-  case class Conj extends ClosedClassWord
-  case class Preconj extends ClosedClassWord
-  //case class PreconjP(head:PreconjBar) extends XP[Word, Preconj, Word, Word] {
-  //  val spec = None
-  //}
-  //object PreconjP {
-  //  def apply(head:Preconj):PreconjP = PreconjP(PreconjBar(head))
-  //}
-  //case class PreconjBar(head:Preconj) extends Xbar[Preconj, Word, Word] {
-  //  val adjunct = None
-  //  val complement = None
-  //}
+  object ConjV extends Enumeration {
+    type ConjV = Value
+    val And, Or = Value
+  }
+  import ConjV._
+
+  object PreconjV extends Enumeration {
+    type PreconjV = Value
+    val Either, Both = Value
+  }
+  import PreconjV._
+
+  case class Conj(value:ConjV) extends ClosedClassWord {
+    override def asText = value.toString.toLowerCase
+  }
+  case class Preconj(value:PreconjV) extends ClosedClassWord {
+    override def asText = value.toString.toLowerCase
+  }
 
   type Sentence = VP
 }
