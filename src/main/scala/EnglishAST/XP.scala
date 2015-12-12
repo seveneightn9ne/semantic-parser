@@ -25,8 +25,8 @@ object XPrules {
 
   case class ConjP[+P <: XP[Word, Word, Word, Word]](preconj:Option[Preconj], left:P, conj:Conj, right:P) {
     def asText:String = preconj match {
-      case Some(p) => p.text + left.asText + conj.text + right.asText
-      case _ => left.asText + conj.text + right.asText
+      case Some(p) => p.text + " " + left.asText + " " + conj.text + " " + right.asText
+      case _ => left.asText + " " + conj.text + " " + right.asText
     }
   }
 
@@ -52,28 +52,25 @@ object XPrules {
     def asText = text
   }
 
-  trait ClosedClassWord extends Enumeration with Word {
-    val text = this.toString.toLowerCase
+  trait ClosedClassWord[T] extends Enumeration with Word {
+    val value:T
+    val text = value.toString.toLowerCase
   }
 
   object ConjV extends Enumeration {
-    type ConjV = Value
+    type C = Value
     val And, Or = Value
   }
   import ConjV._
 
   object PreconjV extends Enumeration {
-    type PreconjV = Value
+    type Pre = Value
     val Either, Both = Value
   }
   import PreconjV._
 
-  case class Conj(value:ConjV) extends ClosedClassWord {
-    override def asText = value.toString.toLowerCase
-  }
-  case class Preconj(value:PreconjV) extends ClosedClassWord {
-    override def asText = value.toString.toLowerCase
-  }
+  case class Conj(value:C) extends ClosedClassWord[C]
+  case class Preconj(value:Pre) extends ClosedClassWord[Pre]
 
   type Sentence = VP
 }

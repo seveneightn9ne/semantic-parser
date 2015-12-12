@@ -14,8 +14,12 @@ object PPrules {
   case class PP(head:Either[Pbar,ConjP[PP]]) extends XP[Word, Preposition, Noun, Word] {
     val spec = None // No Specs on PPs
   }
-  case class Preposition extends Enumeration with ClosedClassWord {
-    type Preposition = Value
+
+  object PValues extends Enumeration {
+    type P = Value
     val On, At, With, From, To, In, Of = Value
   }
+  import PValues._
+  case class Preposition(value:P) extends ClosedClassWord[P]
+
 }

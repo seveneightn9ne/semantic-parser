@@ -23,13 +23,11 @@ object DPrules {
 
 
   object DValues extends Enumeration {
-    type DValue = Value
+    type D = Value
     val The, A, S, Some, All, No, Every = Value
     //def toDP:DP = DP(Dbar(this))
   }
   import DValues._
 
-  case class Determiner(value:DValue) extends ClosedClassWord {
-    override def asText = value.toString.toLowerCase
-  }
+  case class Determiner(value:D) extends ClosedClassWord[D]
 }

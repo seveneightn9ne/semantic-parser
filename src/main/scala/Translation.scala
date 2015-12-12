@@ -9,6 +9,12 @@ import PredicateCalculus._
 object Translation {
   def translate(phrase:XP[Word,Word,Word,Word], context:Option[Entity]):Predicate = (phrase, context) match {
 
+    // Special NP subjects (because we haven't done Pronouns in X')
+    case (VP(Some(NP(None, Left(Nbar(Left(Noun("Everyone")), None)))), vbar), None) => {
+      val newContext = UniqueDesignations.variableDesignation
+      Universal(newContext, translate(vbar, Some(newContext)))
+    }
+
     // Constant NP subject
     case (VP(Some(NP(None, Left(Nbar(Left(Noun(n)), None)))), vbar), None) =>
       translate(vbar, Some(UniqueDesignations.entityConstant(n)))
@@ -23,7 +29,11 @@ object Translation {
     case (NP(Some(DP(None, Left(Dbar(Left(Determiner(DValues.A)))))), nbar), e) =>
         translate(nbar, e)
 
-    case _ => throw new RuntimeException("Can't translate XP phrase: " + phrase.asText)
+    // Forward conjunctions. Is that always right?
+    case (NP(None, Right(conj)), e) =>
+      translate(Right(conj), e)
+
+    case _ => throw new RuntimeException("Can't translate XP phrase: " + phrase)
 
   }
 
@@ -31,6 +41,8 @@ object Translation {
     case (Left(xbar), c) => translate(xbar, c)
     case (Right(ConjP(preconj,l:NP,Conj(ConjV.And),r:NP)), e) =>
       Conjunction(translate(l, e), translate(r, e))
+    case (Right(ConjP(preconj,l:NP,Conj(ConjV.Or),r:NP)), e) =>
+      Disjunction(translate(l, e), translate(r, e))
     case _ => throw new RuntimeException("Can't translate conjunction: " + phrase)
   }
 
@@ -48,7 +60,7 @@ object Translation {
     case (Vbar(Left(Verb(v)), None, None), Some(entity)) =>
       Atom(UniqueDesignations.doesRelation(v), entity)
 
-    case _ => throw new RuntimeException("Can't translate Xbar phrase: " + phrase.asText)
+    case _ => throw new RuntimeException("Can't translate Xbar phrase: " + phrase)
   }
 
 }
