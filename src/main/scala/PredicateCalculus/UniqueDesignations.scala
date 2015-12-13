@@ -1,5 +1,5 @@
 package semanticparser
-import PredicateCalculus._
+import Predicates._
 import collection.mutable.Map
 
 object UniqueDesignations {

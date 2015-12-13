@@ -4,7 +4,7 @@ import XPrules._
 import NPrules._
 import DPrules._
 import VPrules._
-import PredicateCalculus._
+import Predicates._
 
 object Translation {
   def translate(phrase:XP[Word,Word,Word,Word], context:Option[Entity]):Predicate = (phrase, context) match {
