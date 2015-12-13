@@ -39,8 +39,10 @@ object UniqueDesignations {
     lastHypothetical = (lastHypothetical.toInt + 1).toChar
     EntityConstant("hypothetical_" + lastHypothetical.toString)
   }
+  lazy val possibleVariables = ('x' to 'z') ++ ('a' to 'w') ++ ((1 to 9).flatMap{n =>
+    ('a' to 'z').map(_ + "_" + n)})
   def variableDesignation:EntityVariable = {
-    val newvar = (('x' to 'z') ++ ('a' to 'w')).filter{
+    val newvar = possibleVariables.filter{
       x => !entities.values.toSet.contains(x.toString)}.head.toString
     entities.put(newvar,newvar)
     EntityVariable(newvar)
