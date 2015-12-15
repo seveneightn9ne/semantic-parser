@@ -4,8 +4,6 @@ import NPrules._
 
 object DPrules {
 
-  //import Determiner.Values._
-
   case class Dbar(head:Either[Determiner,Dbar]) extends Xbar[Determiner, Word, Word]{
     val complement = None
     val adjunct = None
@@ -20,7 +18,6 @@ object DPrules {
     def apply(head:Determiner) = new DP(None, Left(Dbar(head)))
     def apply(head:Dbar) = new DP(None, Left(Dbar(head)))
   }
-
 
   object DValues extends Enumeration {
     type D = Value
