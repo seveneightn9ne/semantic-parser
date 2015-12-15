@@ -51,7 +51,7 @@ trait SentenceParser extends Parsers {
         if (conclusions.size > 0) {
           println("  Therefore:\n  " + conclusions.map{p => p.toString + " " + p.toEnglish}.mkString("\n  "))
         } else {
-          println("  I don't have any conclusions to draw.")
+          println("  I don't have any interesting conclusions to draw.")
         }
       } catch {
         case e:Translation.TranslationException =>

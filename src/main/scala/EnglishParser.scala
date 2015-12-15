@@ -10,6 +10,7 @@ import VPrules._
 import DPrules._
 
 object EnglishParser extends SentenceParser with RegexParsers {
+  val bannedWords = Determiner.values + "There"
 
   lazy val sentences = (sentence+) ^^ {x=>x}
   lazy val sentence = "\\s*".r ~> vp <~ "." <~ "\\s*".r ^^ {vp => vp}
@@ -23,7 +24,10 @@ object EnglishParser extends SentenceParser with RegexParsers {
   )
   lazy val singulardp = singulardet ^^ {d => DP(d)}
   lazy val pluraldp = pluraldet ^^ {d => DP(d)}
-  lazy val vp = (singularnp ~ " " ~ singularverb ^^ {(np,_,v) => VP(np, v)}
+  lazy val vp = (
+    "[Tt]here ".r ~> (pluralverb <~ " ") ~ pluralnp ^^ {(v,np) => VP(v, np)}
+    | "[Tt]here ".r ~> (singularverb <~ " ") ~ singularnp ^^ {(v,np) => VP(v, np)}
+    | singularnp ~ " " ~ singularverb ^^ {(np,_,v) => VP(np, v)}
     | singularnp ~ " " ~ singularverb ~ " " ~ singularnp ^^ {(subj,_,v,_,obj) => VP(subj,Vbar(v, obj))}
     | pluralnp ~ " " ~ pluralverb ^^ {(n,_,v) => VP(n,v)}
     | (pluralnp <~ " ") ~ (pluralverb <~ " ") ~ pluralnp ^^ {(subj, v, obj) => VP(subj,Vbar(v, obj))}
@@ -36,13 +40,13 @@ object EnglishParser extends SentenceParser with RegexParsers {
   lazy val pluraldet = ("[Aa]ll".r ^^ {d => Determiner(DValues.All)}
     | "[Ss]ome".r ^^ {d => Determiner(DValues.Some)}
     | "[Nn]o".r ^^ {d => Determiner(DValues.No)})
-  lazy val preconj = ("[Ee]ither]".r ^^ {p => Preconj(PreconjV.Either)}
+  lazy val preconj = ("[Ee]ither".r ^^ {p => Preconj(PreconjV.Either)}
     | "[Bb]oth".r ^^ {p => Preconj(PreconjV.Both)})
   lazy val conj = ("and".r ^^ {c => Conj(ConjV.And)}
     | "or".r ^^ {c => Conj(ConjV.Or)})
   lazy val singularverb = "\\w+s".r ^^ {v => Verb(v.dropRight(1))}
   lazy val pluralverb = "\\w+".r ^^ {v => Verb(v, true)} filter(v => !v.asText.endsWith("s"))
-  lazy val noun = ("\\w+".r ^^ {n=>Noun(n,false)}) filter(n => !Determiner.values.contains(n.asText))
+  lazy val noun = ("\\w+".r ^^ {n=>Noun(n,false)}) filter(n => !bannedWords.contains(n.asText))
   lazy val pluralnoun = "\\w+s".r ^^ {n => Noun(n.dropRight(1), true)}
 
 

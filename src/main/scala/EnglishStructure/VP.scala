@@ -16,8 +16,8 @@ object VPrules {
   case class VP(spec:Option[NP], head:Either[Vbar,ConjP[VP]]) extends XP[Noun, Verb, Noun, Preposition]
   object VP {
     def apply(spec:NP, head:Vbar) = new VP(Some(spec), Left(head))
-    def apply(head:Verb) = new VP(None, Left(Vbar(head)))
     def apply(spec:NP, head:Verb) = new VP(Some(spec), Left(Vbar(head)))
+    def apply(head:Verb, complement:NP) = new VP(None, Left(Vbar(head, complement)))
   }
   case class Verb(text:String, pluralSubjAgr:Boolean=false) extends Word {
     override def asText = pluralSubjAgr match {

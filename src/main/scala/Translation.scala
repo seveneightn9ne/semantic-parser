@@ -67,7 +67,13 @@ object Translation {
     case (NP(None, Right(conj)), ctx) =>
       translate(Right(conj), ctx)
 
-    case _ => throw new TranslationException("Can't translate XP phrase: " + phrase)
+    // Existential (no subject)
+    case (VP(None, vbar), NoContext) => {
+      val v = UniqueDesignations.variableDesignation(NoContext)
+      Existential(v, translate(vbar, Subject(v)))
+    }
+
+    case _ => throw new TranslationException("Can't translate XP phrase: \"" + phrase.asText + "\" " + phrase)
 
   }
 

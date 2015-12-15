@@ -63,6 +63,10 @@ object Conclusions {
           Universal(v, Conditional(Negation(Atom(antecedent, v)), Negation(Atom(consequent, v)))))
       }
     }}}
+  def generateExistentials(from:Set[UnaryRelation]):Set[Predicate] = from map {relation => {
+    val v = UniqueDesignations.variableDesignation(Translation.NoContext)
+    Existential(v, Atom(relation, v))
+  }}
 
   def validConclusions(predicates:Set[Predicate], universes:List[Universe]):Set[Predicate] =
     predicates filter { p =>
@@ -81,7 +85,7 @@ object Conclusions {
     val relations:Set[UnaryRelation] = universes.head.unaryRelations.toSet
     val entities:Set[EntityConstant] = universes.head.entities.toSet
     validConclusions(generateUniversalConditionals(relations) ++ generateAtoms(
-      entities, relations), universes)
+      entities, relations) ++ generateExistentials(relations), universes)
   }
 
   def generateInterestingConclusions(priors:Set[Predicate]):Set[Predicate] =
