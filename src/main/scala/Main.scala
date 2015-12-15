@@ -47,7 +47,7 @@ trait SentenceParser extends Parsers {
       try {
         val predicates = results.head.map(s => Translation.translate(s, Translation.NoContext))
         println("  " + predicates.mkString("\n  "))
-        val conclusions = Conclusions.generateConclusions(predicates.toSet)
+        val conclusions = Conclusions.generateInterestingConclusions(predicates.toSet)
         if (conclusions.size > 0) {
           println("  Therefore:\n  " + conclusions.map{p => p.toString + " " + p.toEnglish}.mkString("\n  "))
         } else {

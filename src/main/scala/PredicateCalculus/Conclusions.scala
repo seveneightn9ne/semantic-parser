@@ -71,8 +71,8 @@ object Conclusions {
   def isInteresting(conclusion:Predicate, priors:Set[Predicate]):Boolean =
     !priors.contains(conclusion) && priors.forall(!_.equivalent(conclusion)) &&
     priors.forall(p =>
-        !generateConclusions(priors - p).contains(conclusion) &&
-        !generateConclusions(priors - p).exists(_.equivalent(conclusion)))
+        !generateConclusions(Set(p)).contains(conclusion) &&
+        !generateConclusions(Set(p)).exists(_.equivalent(conclusion)))
 
   def generateConclusions(priors:Set[Predicate]):Set[Predicate] = {
     if (priors.size == 0) return Set()
@@ -81,8 +81,11 @@ object Conclusions {
     val relations:Set[UnaryRelation] = universes.head.unaryRelations.toSet
     val entities:Set[EntityConstant] = universes.head.entities.toSet
     validConclusions(generateUniversalConditionals(relations) ++ generateAtoms(
-      entities, relations), universes).filter {p =>
-      isInteresting(p, priors)}
+      entities, relations), universes)
   }
+
+  def generateInterestingConclusions(priors:Set[Predicate]):Set[Predicate] =
+    generateConclusions(priors).filter {p => isInteresting(p, priors)}
+
 
 }
