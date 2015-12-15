@@ -59,7 +59,7 @@ trait SentenceParser extends Parsers {
       }
     } else {
       printf("  parse error: Ambiguous parse: %s valid trees%n", results.length.toString)
-      results.foreach(l => println(l))
+      results.foreach(l => println(l map {Utils.prettyprint(_)}))
     }
   }
 }

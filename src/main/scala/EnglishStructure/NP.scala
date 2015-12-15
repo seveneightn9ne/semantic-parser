@@ -29,17 +29,21 @@ object NPrules {
     val text:String
     val plural:Boolean
   }
-  case class RegularNoun(text:String, plural:Boolean=false) extends Noun {
+  case class CommonNoun(text:String, plural:Boolean=false) extends Noun {
     override def asText = plural match {
       case true => text + "s"
       case _ => text
     }
   }
+  case class ProperNoun(text:String) extends Noun {
+    override def asText = text.capitalize
+    val plural = false
+  }
   object Noun {
     def apply(text:String, plural:Boolean=false) = try {
       Pronoun(Pron.withName(text.toLowerCase.capitalize))
     } catch {
-      case e:NoSuchElementException => RegularNoun(text, plural)
+      case e:NoSuchElementException => CommonNoun(text, plural)
     }
     def unapply(n:Noun):Option[String] = Some(n.text)
   }
