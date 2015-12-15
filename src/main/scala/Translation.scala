@@ -16,18 +16,30 @@ object Translation {
 
   def translate(phrase:XP[Word,Word,Word,Word], context:Context):Predicate = (phrase, context) match {
 
-    // Special NP subjects (because we haven't implemented closed-class Pronouns)
-    case (VP(Some(NP(None, Left(Nbar(Left(Noun("Everyone",false)), None)))), vbar), NoContext) => {
+    // Special pronoun subjects
+    case (VP(Some(NP(None, Left(Nbar(Left(Pronoun(Pron.Everyone)), compl, None)))), vbar), NoContext) => {
       val subject = UniqueDesignations.variableDesignation(NoContext)
-      Universal(subject, translate(vbar, Subject(subject)))
+      compl match {
+        case Some(vp) => Universal(subject,
+          Conditional(translate(vp, Subject(subject)), translate(vbar, Subject(subject))))
+        case None => Universal(subject, translate(vbar, Subject(subject)))
+      }
+    }
+    case (VP(Some(NP(None, Left(Nbar(Left(Pronoun(Pron.Everything)), compl, None)))), vbar), NoContext)=> {
+      val subject = UniqueDesignations.variableDesignation(NoContext)
+      compl match {
+        case Some(vp) => Universal(subject,
+          Conditional(translate(vp, Subject(subject)), translate(vbar, Subject(subject))))
+        case None => Universal(subject, translate(vbar, Subject(subject)))
+      }
     }
 
     // Constant NP subject
-    case (VP(Some(NP(None, Left(Nbar(Left(Noun(n, false)), None)))), vbar), NoContext) =>
+    case (VP(Some(NP(None, Left(Nbar(Left(Noun(n)), None, None)))), vbar), NoContext) =>
       translate(vbar, Subject(UniqueDesignations.entityConstant(n)))
 
     // Constant NP object
-    case (NP(None, Left(Nbar(Left(Noun(n, false)), None))), SubjectPredicate(e,r)) =>
+    case (NP(None, Left(Nbar(Left(Noun(n)), None, None))), SubjectPredicate(e,r)) =>
       BinaryAtom(r, e, UniqueDesignations.entityConstant(n))
 
     // Non-Branching DP Every
@@ -73,6 +85,12 @@ object Translation {
       Existential(v, translate(vbar, Subject(v)))
     }
 
+    case (VP(Some(NP(None, Left(Nbar(Left(Pronoun(Pron.That)), None, None)))), vbar), ctx:Subject) =>
+      translate(vbar, ctx)
+
+    case (VP(Some(NP(None, Left(Nbar(Left(Pronoun(Pron.Who)), None, None)))), vbar), ctx:Subject) =>
+      translate(vbar, ctx)
+
     case _ => throw new TranslationException("Can't translate XP phrase: \"" + phrase.asText + "\" " + phrase)
 
   }
@@ -89,7 +107,7 @@ object Translation {
   def translate(phrase:Xbar[Word,Word,Word], context:Context):Predicate = (phrase,context) match {
 
     // Non Branching Nbar
-    case (Nbar(Left(Noun(n,p)), None), Subject(e)) =>
+    case (Nbar(Left(Noun(n)), None, None), Subject(e)) =>
       Atom(UniqueDesignations.isARelation(n), e)
 
     // is ____ (the "s" in is was removed for being a 1st person present suffix)

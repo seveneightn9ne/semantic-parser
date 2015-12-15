@@ -1,0 +1,5 @@
+Everyone is a man or a woman.
+All mans fly.
+Everything that flies is a man.
+Everything that flies is either a man or a woman.
+Everyone who is either a man or a woman flies.

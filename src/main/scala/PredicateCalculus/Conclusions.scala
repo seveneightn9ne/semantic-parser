@@ -68,6 +68,11 @@ object Conclusions {
     Existential(v, Atom(relation, v))
   }}
 
+  def generateUniversals(from:Set[UnaryRelation]):Set[Predicate] = from map {relation => {
+    val v = UniqueDesignations.variableDesignation(Translation.NoContext)
+    Universal(v, Atom(relation, v))
+  }}
+
   def validConclusions(predicates:Set[Predicate], universes:List[Universe]):Set[Predicate] =
     predicates filter { p =>
       universes.forall(u => p.evaluate(u))}
@@ -76,7 +81,8 @@ object Conclusions {
     !priors.contains(conclusion) && priors.forall(!_.equivalent(conclusion)) &&
     priors.forall(p =>
         !generateConclusions(Set(p)).contains(conclusion) &&
-        !generateConclusions(Set(p)).exists(_.equivalent(conclusion)))
+        !generateConclusions(Set(p)).exists(_.equivalent(conclusion))) &&
+    !conclusion.toEnglish.contains("hypothetical_")
 
   def generateConclusions(priors:Set[Predicate]):Set[Predicate] = {
     if (priors.size == 0) return Set()
@@ -85,7 +91,8 @@ object Conclusions {
     val relations:Set[UnaryRelation] = universes.head.unaryRelations.toSet
     val entities:Set[EntityConstant] = universes.head.entities.toSet
     validConclusions(generateUniversalConditionals(relations) ++ generateAtoms(
-      entities, relations) ++ generateExistentials(relations), universes)
+      entities, relations) ++ generateExistentials(relations) ++ generateUniversals(relations),
+    universes)
   }
 
   def generateInterestingConclusions(priors:Set[Predicate]):Set[Predicate] =
