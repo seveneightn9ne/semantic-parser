@@ -41,7 +41,7 @@ object EnglishParser extends SentenceParser with RegexParsers {
   lazy val conj = ("and".r ^^ {c => Conj(ConjV.And)}
     | "or".r ^^ {c => Conj(ConjV.Or)})
   lazy val singularverb = "\\w+s".r ^^ {v => Verb(v.dropRight(1))}
-  lazy val pluralverb = "\\w+".r ^^ {v => Verb(v, true)}
+  lazy val pluralverb = "\\w+".r ^^ {v => Verb(v, true)} filter(v => !v.asText.endsWith("s"))
   lazy val noun = ("\\w+".r ^^ {n=>Noun(n,false)}) filter(n => !Determiner.values.contains(n.asText))
   lazy val pluralnoun = "\\w+s".r ^^ {n => Noun(n.dropRight(1), true)}
 
