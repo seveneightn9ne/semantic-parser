@@ -26,7 +26,8 @@ object EnglishParser extends SentenceParser with RegexParsers {
   lazy val vp = (singularnp ~ " " ~ singularverb ^^ {(np,_,v) => VP(np, v)}
     | singularnp ~ " " ~ singularverb ~ " " ~ singularnp ^^ {(subj,_,v,_,obj) => VP(subj,Vbar(v, obj))}
     | pluralnp ~ " " ~ pluralverb ^^ {(n,_,v) => VP(n,v)}
-    | (pluralnp <~ " ") ~ (pluralverb <~ " ") ~ pluralnp ^^ {(subj, v, obj) => VP(subj,Vbar(v, obj))})
+    | (pluralnp <~ " ") ~ (pluralverb <~ " ") ~ pluralnp ^^ {(subj, v, obj) => VP(subj,Vbar(v, obj))}
+    | (pluralnp <~ " ") ~ (pluralverb <~ " ") ~ singularnp ^^ {(subj, v, obj) => VP(subj,Vbar(v, obj))})
 
   // Words
   lazy val singulardet = ("[Ee]very".r ^^ {d => Determiner(DValues.Every)}

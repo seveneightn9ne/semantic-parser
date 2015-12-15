@@ -7,85 +7,103 @@ import VPrules._
 import Predicates._
 
 object Translation {
-  def translate(phrase:XP[Word,Word,Word,Word], context:Option[Entity]):Predicate = (phrase, context) match {
+  case class TranslationException(message:String) extends Exception(message)
 
-    // Special NP subjects (because we haven't done Pronouns in X')
-    case (VP(Some(NP(None, Left(Nbar(Left(Noun("Everyone",false)), None)))), vbar), None) => {
-      val newContext = UniqueDesignations.variableDesignation
-      Universal(newContext, translate(vbar, Some(newContext)))
+  sealed trait Context
+  object NoContext extends Context
+  case class Subject(e:Entity) extends Context
+  case class SubjectPredicate(e:Entity, r:BinaryRelation) extends Context
+
+  def translate(phrase:XP[Word,Word,Word,Word], context:Context):Predicate = (phrase, context) match {
+
+    // Special NP subjects (because we haven't implemented closed-class Pronouns)
+    case (VP(Some(NP(None, Left(Nbar(Left(Noun("Everyone",false)), None)))), vbar), NoContext) => {
+      val subject = UniqueDesignations.variableDesignation
+      Universal(subject, translate(vbar, Subject(subject)))
     }
 
     // Constant NP subject
-    case (VP(Some(NP(None, Left(Nbar(Left(Noun(n, false)), None)))), vbar), None) =>
-      translate(vbar, Some(UniqueDesignations.entityConstant(n)))
+    case (VP(Some(NP(None, Left(Nbar(Left(Noun(n, false)), None)))), vbar), NoContext) =>
+      translate(vbar, Subject(UniqueDesignations.entityConstant(n)))
+
+    // Constant NP object
+    case (NP(None, Left(Nbar(Left(Noun(n, false)), None))), SubjectPredicate(e,r)) =>
+      BinaryAtom(r, e, UniqueDesignations.entityConstant(n))
 
     // Non-Branching DP Every
-    case (VP(Some(NP(Some(DP(None, Left(Dbar(Left(Determiner(DValues.Every)))))), Left(nbar))), vbar), None) => {
+    case (VP(Some(NP(
+      Some(DP(None,Left(Dbar(Left(Determiner(DValues.Every)))))),
+      Left(nbar))), vbar), NoContext) => {
       val newContext = UniqueDesignations.variableDesignation
-      Universal(newContext, Conditional(translate(nbar, Some(newContext)),translate(vbar, Some(newContext))))
+      Universal(newContext, Conditional(translate(nbar, Subject(newContext)),translate(vbar, Subject(newContext))))
     }
 
     // Non-Branching DP All
     case (VP(Some(NP(Some(
         DP(None, Left(Dbar(Left(Determiner(DValues.All)))))),
-      Left(nbar))), vbar), None) => {
+      Left(nbar))), vbar), NoContext) => {
       val newContext = UniqueDesignations.variableDesignation
-      Universal(newContext, Conditional(translate(nbar, Some(newContext)),translate(vbar, Some(newContext))))
+      Universal(newContext, Conditional(translate(nbar, Subject(newContext)),translate(vbar, Subject(newContext))))
     }
 
     // Non-branching DP "No" -> Negative existential
     case (VP(Some(NP(Some(
         DP(None, Left(Dbar(Left(Determiner(DValues.No)))))),
-        Left(nbar))), vbar), None) => {
+        Left(nbar))), vbar), NoContext) => {
       val newContext = UniqueDesignations.variableDesignation
       Universal(newContext,
-        Conditional(translate(nbar, Some(newContext)), Negation(translate(vbar, Some(newContext)))))
+        Conditional(translate(nbar, Subject(newContext)), Negation(translate(vbar, Subject(newContext)))))
     }
 
-    // NP with determiner "a", given context, as in X is [a Y]
-    case (NP(Some(DP(None, Left(Dbar(Left(Determiner(DValues.A)))))), nbar), Some(e)) =>
-      translate(nbar, Some(e))
+    // NP with determiner "a", given single context, as in X is [a Y]
+    case (NP(Some(DP(None, Left(Dbar(Left(Determiner(DValues.A)))))), nbar), ctx:Subject) =>
+      translate(nbar, ctx)
 
-    // NP with no determiner, with context (as in "All Marines are candycanes")
-    case (NP(None, nbar), Some(e)) =>
-      translate(nbar, Some(e))
+    // NP with no determiner, with single context (as in "All Marines are candycanes")
+    case (NP(None, nbar), ctx:Subject) =>
+      translate(nbar, ctx)
 
     // Forward conjunctions. Is that always right?
-    case (NP(None, Right(conj)), e) =>
-      translate(Right(conj), e)
+    case (NP(None, Right(conj)), ctx) =>
+      translate(Right(conj), ctx)
 
-    case _ => throw new RuntimeException("Can't translate XP phrase: " + phrase)
+    case _ => throw new TranslationException("Can't translate XP phrase: " + phrase)
 
   }
 
-  def translate(phrase:Either[Xbar[Word,Word,Word], ConjP[XP[Word,Word,Word,Word]]], context:Option[Entity]):Predicate = (phrase, context) match {
+  def translate(phrase:Either[Xbar[Word,Word,Word], ConjP[XP[Word,Word,Word,Word]]], context:Context):Predicate = (phrase, context) match {
     case (Left(xbar), c) => translate(xbar, c)
     case (Right(ConjP(preconj,l:NP,Conj(ConjV.And),r:NP)), e) =>
       Conjunction(translate(l, e), translate(r, e))
     case (Right(ConjP(preconj,l:NP,Conj(ConjV.Or),r:NP)), e) =>
       Disjunction(translate(l, e), translate(r, e))
-    case _ => throw new RuntimeException("Can't translate conjunction: " + phrase)
+    case _ => throw new TranslationException("Can't translate conjunction: " + phrase)
   }
 
-  def translate(phrase:Xbar[Word,Word,Word], context:Option[Entity]):Predicate = (phrase,context) match {
+  def translate(phrase:Xbar[Word,Word,Word], context:Context):Predicate = (phrase,context) match {
 
     // Non Branching Nbar
-    case (Nbar(Left(Noun(n,p)), None), Some(e)) =>
+    case (Nbar(Left(Noun(n,p)), None), Subject(e)) =>
       Atom(UniqueDesignations.isARelation(n), e)
 
     // is ____ (the "s" in is was removed for being a 1st person present suffix)
-    case (Vbar(Left(Verb("i",false)), Some(np), None), e)  =>
+    case (Vbar(Left(Verb("i",false)), Some(np), None), e:Subject)  =>
         translate(np, e)
 
     // are ___ (same as above with plural subject agreement)
-    case (Vbar(Left(Verb("are",true)), Some(np), None), e) =>
+    case (Vbar(Left(Verb("are",true)), Some(np), None), e:Subject) =>
         translate(np, e)
 
     // Non branching Vbar
-    case (Vbar(Left(Verb(v,p)), None, None), Some(entity)) =>
+    case (Vbar(Left(Verb(v,p)), None, None), Subject(entity)) =>
       Atom(UniqueDesignations.doesRelation(v), entity)
 
-    case _ => throw new RuntimeException("Can't translate Xbar phrase: " + phrase)
+    // Verb with complement
+    case (Vbar(Left(Verb(v,p)), Some(np),None), Subject(entity)) =>
+      translate(np, SubjectPredicate(entity, UniqueDesignations.binaryRelation(v)))
+
+    case _ => throw new TranslationException(
+      "Can't translate phrase: \"" + phrase.asText + "\" " +  phrase)
   }
 
 }

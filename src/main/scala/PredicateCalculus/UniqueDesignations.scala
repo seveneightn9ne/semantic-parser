@@ -11,7 +11,7 @@ object UniqueDesignations {
   def name(e:EntityConstant):Option[String] = entities map {_.swap} get e.value
   var lastHypothetical:Character = ('a'.toInt - 1).toChar
 
-  def doesRelation(word:String):Relation = relations get word match {
+  def doesRelation(word:String):UnaryRelation = relations get word match {
     case Some(rel) => DoesRelation(rel)
     case _ => {
       val newrel = word.toUpperCase.filter{ c => !relations.contains(c.toString) }.head.toString
@@ -19,12 +19,20 @@ object UniqueDesignations {
       DoesRelation(newrel)
     }
   }
-  def isARelation(word:String):Relation = relations get word match {
+  def isARelation(word:String):UnaryRelation = relations get word match {
     case Some(rel) => IsARelation(rel)
     case _ => {
       val newrel = word.toUpperCase.filter{ c => !relations.contains(c.toString) }.head.toString
       relations.put(word,newrel)
       IsARelation(newrel)
+    }
+  }
+  def binaryRelation(word:String):BinaryRelation = relations get word match {
+    case Some(rel) => BinaryRelation(rel)
+    case _ => {
+      val newrel = word.toUpperCase.filter{ c => !relations.contains(c.toString) }.head.toString
+      relations.put(word,newrel)
+      BinaryRelation(newrel)
     }
   }
   def entityConstant(word:String):EntityConstant = entities get word match {

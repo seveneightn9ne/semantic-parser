@@ -4,30 +4,55 @@ import Predicates._
 
 object Conclusions {
 
-  def extractRelations(predicates:Set[Predicate]):Set[Relation] = predicates flatMap {p => p.relations}
+  def extractRelations(predicates:Set[Predicate]):Set[UnaryRelation] = predicates flatMap {p => p.relations}
+  def extractBinaryRelations(predicates:Set[Predicate]):Set[BinaryRelation] =
+    predicates flatMap {p => p.binaryRelations}
   def extractEntities(predicates:Set[Predicate]):Set[EntityConstant] = predicates flatMap {p => p.entities}
 
-  def allUniverses(e:Set[EntityConstant], r:Set[Relation]):Set[Universe] = {
+  def allUniverses(e:Set[EntityConstant], r:Set[UnaryRelation], r2:Set[BinaryRelation]):List[Universe] = {
     val entity = e.toIndexedSeq
     val relation = r.toIndexedSeq
-    Utils.refeed[Set[List[Boolean]]](
-      e.size * r.size, Utils.expandBitstring, Set[List[Boolean]](List())) map { bitstring =>
+    val universes = Utils.refeed[List[List[Boolean]]](
+      e.size * r.size, Utils.expandBitstring, List[List[Boolean]](List())) map { bitstring =>
         val universe = new Universe()
         bitstring.indices.foreach { i =>
           universe.relate(entity(i % e.size), relation(i / e.size), bitstring(i))
         }
         universe
-  }}
+      }
+    val binaryRelation = r2.toIndexedSeq
+    val binaryUniverses = Utils.refeed[List[List[Boolean]]](
+      e.size * e.size * r2.size, Utils.expandBitstring, List[List[Boolean]](List())) map { bitstring =>
+        val universe = new Universe()
+        bitstring.indices.foreach { i =>
+          universe.relate(entity(i % e.size), entity((i/e.size)%e.size),
+            binaryRelation(i/(e.size*e.size)), bitstring(i))
+        }
+        universe
+    }
+    binaryUniverses flatMap{ bu => universes map { u =>
+      val combinedUniverse = new Universe()
+      combinedUniverse.entities ++= bu.entities
+      combinedUniverse.entities ++= u.entities
+      combinedUniverse.unaryRelations ++= u.unaryRelations
+      combinedUniverse.binaryRelations ++= bu.binaryRelations
+      combinedUniverse.applicationMap ++= u.applicationMap
+      combinedUniverse.twoPlacePredicates ++= bu.twoPlacePredicates
+      combinedUniverse
+    }}
+  }
 
-  def possibleUniverses(predicates:Set[Predicate]):Set[Universe] = allUniverses(
-    extractEntities(predicates), extractRelations(predicates)).filter{u =>
+  def possibleUniverses(predicates:Set[Predicate]):List[Universe] = allUniverses(
+    extractEntities(predicates),
+    extractRelations(predicates),
+    extractBinaryRelations(predicates)).filter{u =>
       predicates.forall{p => p.evaluate(u)}
   }
 
-  def generateAtoms(e:Set[EntityConstant], r:Set[Relation]):Set[Predicate] = e flatMap {entity =>
+  def generateAtoms(e:Set[EntityConstant], r:Set[UnaryRelation]):Set[Predicate] = e flatMap {entity =>
     r flatMap {relation => List(Atom(relation, entity), Negation(Atom(relation, entity)))}}
 
-  def generateUniversalConditionals(from:Set[Relation]):Set[Predicate] = from flatMap {antecedent =>
+  def generateUniversalConditionals(from:Set[UnaryRelation]):Set[Predicate] = from flatMap {antecedent =>
     from flatMap {consequent => antecedent match {
       case `consequent` => None
       case _ => {
@@ -39,7 +64,7 @@ object Conclusions {
       }
     }}}
 
-  def validConclusions(predicates:Set[Predicate], universes:Set[Universe]):Set[Predicate] =
+  def validConclusions(predicates:Set[Predicate], universes:List[Universe]):Set[Predicate] =
     predicates filter { p =>
       universes.forall(u => p.evaluate(u))}
 
@@ -51,9 +76,9 @@ object Conclusions {
 
   def generateConclusions(priors:Set[Predicate]):Set[Predicate] = {
     if (priors.size == 0) return Set()
-    val universes:Set[Universe] = possibleUniverses(priors)
+    val universes:List[Universe] = possibleUniverses(priors)
     if (universes.size == 0) return Set()
-    val relations:Set[Relation] = universes.head.relations.toSet
+    val relations:Set[UnaryRelation] = universes.head.unaryRelations.toSet
     val entities:Set[EntityConstant] = universes.head.entities.toSet
     validConclusions(generateUniversalConditionals(relations) ++ generateAtoms(
       entities, relations), universes).filter {p =>

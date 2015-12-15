@@ -8,7 +8,7 @@ object Utils {
     case _ => refeed(n-1, f, f(initial))
   }
 
-  def expandBitstring(set:Set[List[Boolean]]):Set[List[Boolean]] = set flatMap { bitstring =>
+  def expandBitstring(set:List[List[Boolean]]):List[List[Boolean]] = set flatMap { bitstring =>
     Set[List[Boolean]](true :: bitstring, false :: bitstring)
   }
 

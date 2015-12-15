@@ -44,13 +44,18 @@ trait SentenceParser extends Parsers {
       //println("  " + results.head.toString)
       println("  " + results.head.map(s => s.asText).mkString(". "))
       //println("  " + results.head.mkString("\n"))
-      val predicates = results.head.map(s => Translation.translate(s, None))
-      println("  " + predicates.mkString("\n  "))
-      val conclusions = Conclusions.generateConclusions(predicates.toSet)
-      if (conclusions.size > 0) {
-        println("  Therefore:\n  " + conclusions.map{p => p.toString + " " + p.toEnglish}.mkString("\n  "))
-      } else {
-        println("  I don't have any conclusions to draw.")
+      try {
+        val predicates = results.head.map(s => Translation.translate(s, Translation.NoContext))
+        println("  " + predicates.mkString("\n  "))
+        val conclusions = Conclusions.generateConclusions(predicates.toSet)
+        if (conclusions.size > 0) {
+          println("  Therefore:\n  " + conclusions.map{p => p.toString + " " + p.toEnglish}.mkString("\n  "))
+        } else {
+          println("  I don't have any conclusions to draw.")
+        }
+      } catch {
+        case e:Translation.TranslationException =>
+          println("  Translation failure: " + e.message)
       }
     } else {
       printf("  parse error: Ambiguous parse: %s valid trees%n", results.length.toString)
