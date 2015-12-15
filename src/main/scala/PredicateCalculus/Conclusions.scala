@@ -56,7 +56,7 @@ object Conclusions {
     from flatMap {consequent => antecedent match {
       case `consequent` => None
       case _ => {
-        val v = UniqueDesignations.variableDesignation
+        val v = UniqueDesignations.variableDesignation(Translation.NoContext)
         List(Universal(v, Conditional(Atom(antecedent, v), Atom(consequent, v))),
           Universal(v, Conditional(Negation(Atom(antecedent, v)), Atom(consequent, v))),
           Universal(v, Conditional(Atom(antecedent, v), Negation(Atom(consequent, v)))),

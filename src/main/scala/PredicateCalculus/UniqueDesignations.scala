@@ -1,10 +1,10 @@
 package semanticparser
 import Predicates._
+import Translation._
 import collection.mutable.Map
 
 object UniqueDesignations {
   val entities:Map[String,String] = Map[String,String]()
-  //val relations:MutSet[String] = MutSet[String]()
   val relations:Map[String,String] = Map[String,String]()
 
   def name(r:Relation):Option[String] = relations map {_.swap} get r.value
@@ -47,11 +47,13 @@ object UniqueDesignations {
     lastHypothetical = (lastHypothetical.toInt + 1).toChar
     EntityConstant("hypothetical_" + lastHypothetical.toString)
   }
-  lazy val possibleVariables = ('x' to 'z') ++ ('a' to 'w') ++ ((1 to 9).flatMap{n =>
-    ('a' to 'z').map(_ + "_" + n)})
-  def variableDesignation:EntityVariable = {
-    val newvar = possibleVariables.filter{
-      x => !entities.values.toSet.contains(x.toString)}.head.toString
+  lazy val possibleVariables = ('x' to 'z') ++ ('a' to 'w')
+  def variableDesignation(ctx:Context):EntityVariable = {
+    val newvar = possibleVariables.filter{x => ctx match {
+      case Subject(e) => e.value != x.toString
+      case SubjectPredicate(e, _) => e.value != x.toString
+      case _ => true
+    }}.head.toString
     entities.put(newvar,newvar)
     EntityVariable(newvar)
   }

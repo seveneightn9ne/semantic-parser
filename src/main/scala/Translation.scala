@@ -18,7 +18,7 @@ object Translation {
 
     // Special NP subjects (because we haven't implemented closed-class Pronouns)
     case (VP(Some(NP(None, Left(Nbar(Left(Noun("Everyone",false)), None)))), vbar), NoContext) => {
-      val subject = UniqueDesignations.variableDesignation
+      val subject = UniqueDesignations.variableDesignation(NoContext)
       Universal(subject, translate(vbar, Subject(subject)))
     }
 
@@ -34,7 +34,7 @@ object Translation {
     case (VP(Some(NP(
       Some(DP(None,Left(Dbar(Left(Determiner(DValues.Every)))))),
       Left(nbar))), vbar), NoContext) => {
-      val newContext = UniqueDesignations.variableDesignation
+      val newContext = UniqueDesignations.variableDesignation(NoContext)
       Universal(newContext, Conditional(translate(nbar, Subject(newContext)),translate(vbar, Subject(newContext))))
     }
 
@@ -42,7 +42,7 @@ object Translation {
     case (VP(Some(NP(Some(
         DP(None, Left(Dbar(Left(Determiner(DValues.All)))))),
       Left(nbar))), vbar), NoContext) => {
-      val newContext = UniqueDesignations.variableDesignation
+      val newContext = UniqueDesignations.variableDesignation(NoContext)
       Universal(newContext, Conditional(translate(nbar, Subject(newContext)),translate(vbar, Subject(newContext))))
     }
 
@@ -50,7 +50,7 @@ object Translation {
     case (VP(Some(NP(Some(
         DP(None, Left(Dbar(Left(Determiner(DValues.No)))))),
         Left(nbar))), vbar), NoContext) => {
-      val newContext = UniqueDesignations.variableDesignation
+      val newContext = UniqueDesignations.variableDesignation(NoContext)
       Universal(newContext,
         Conditional(translate(nbar, Subject(newContext)), Negation(translate(vbar, Subject(newContext)))))
     }
