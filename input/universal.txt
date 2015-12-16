@@ -1,1 +1,2 @@
-Every#man#eats.
+Every man eats.
+Marc is a man.
