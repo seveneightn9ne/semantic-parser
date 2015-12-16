@@ -70,20 +70,19 @@ object Conclusions {
     //println(e)
     //println(r)
     val newAtomUniverses:Set[Universe] = Set(new Universe()) ++
-      (0 to 2^(e.size*r.size)).map{Utils.toBitstring(_, e.size*r.size)}.map{ bitstring:IndexedSeq[Boolean] =>
+      Utils.bitstrings(e.size*r.size).map{ bitstring:IndexedSeq[Boolean] =>
         val u = new Universe()
         bitstring.indices.foreach { i =>
           u.relate(e(i % e.size), r(i / e.size), bitstring(i))
         }
         u
       }.toSet
-    //println(newAtomUniverses.size + " new atom universes.")
+    println(newAtomUniverses.size + " new atom universes.")
     //println("Atomic:" + newAtomUniverses)
     //Binary relations (new,old)
     val e_old = oldEntities.toIndexedSeq
     val r2 = rel2.toIndexedSeq
-    val binarybitstrings = (0 to 2^(e_old.size*e.size*r2.size)).map{
-        Utils.toBitstring(_, e.size*e_old.size*r2.size)}
+    val binarybitstrings = Utils.bitstrings(e.size*e_old.size*r2.size)
     val newBinaryNewOldUniverses = Set(new Universe()) ++ binarybitstrings.map{ bitstring =>
         val u = new Universe()
         bitstring.indices.foreach { i =>
@@ -144,8 +143,8 @@ object Conclusions {
     var pastPredicates = Set[Predicate]()
     //println(predicates)
     predicates foreach {predicate => {
-      //println(universes.size + " universes.")
-      //println("Incorporating predicate " + predicate + "...")
+      println(universes.size + " universes.")
+      println("Incorporating predicate " + predicate + "...")
       val newEntities = predicate.entities
       //println(predicate)
       //println(newEntities)
@@ -157,9 +156,9 @@ object Conclusions {
         //val i = incorporate(universe, newEntities).filter{u => pastPredicates.forall{p => p.evaluate(u)}}
         //println("Incorporating " + i)
         val i = npus.map{u => combineUniverses(List(universe, u))}
-        //println(i.size + " new universes")
+        println(i.size + " new universes")
         val j = i.filter{u => pastPredicates.forall{p => p.evaluate(u)}}
-        //println(j.size + " after filtering")
+        println(j.size + " after filtering")
         j
       }}
     }}

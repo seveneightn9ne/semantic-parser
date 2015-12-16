@@ -22,7 +22,7 @@ class Universe {
   def apply(e:EntityConstant, r:UnaryRelation):Boolean = try {
     applicationMap((e,r))
   } catch {
-    case e:NoSuchElementException => false
+    case e:NoSuchElementException => false // This forces universes to appear "fully specified"
   }
 
   def apply(e:EntityConstant, f:EntityConstant, r:BinaryRelation):Boolean = try{
