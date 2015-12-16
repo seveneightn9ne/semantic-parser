@@ -13,6 +13,11 @@ object Utils {
     Set[List[Boolean]](true :: bitstring, false :: bitstring)
   }
 
+  def toBitstring(num:Int, bits:Int):IndexedSeq[Boolean] = num.toBinaryString.takeRight(bits).map(_ match {
+    case '1' => true; case '0' => false})
+
+  def bitstrings(bits:Int) = (0 to 2^(bits)).map(Utils.toBitstring(_, bits))
+
 
   /** Pretty print tree */
   def prettyprint(xp:XP[Word,Word,Word,Word]):String = xp.getClass.getSimpleName +
@@ -45,7 +50,5 @@ object Utils {
       case _ => ""
     }) + "  " + prettyprint(conj.left).split("\n").mkString("\n  ") +
     "  " + conj.conj.asText + "\n  " + prettyprint(conj.right).split("\n").mkString("\n ")
-
-
 
 }

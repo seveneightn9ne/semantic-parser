@@ -34,12 +34,12 @@ object Translation {
       }
     }
 
-    // Constant NP subject
-    case (VP(Some(NP(None, Left(Nbar(Left(Noun(n)), None, None)))), vbar), NoContext) =>
+    // ProperNoun subject
+    case (VP(Some(NP(None, Left(Nbar(Left(ProperNoun(n)), None, None)))), vbar), NoContext) =>
       translate(vbar, Subject(UniqueDesignations.entityConstant(n)))
 
-    // Constant NP object
-    case (NP(None, Left(Nbar(Left(Noun(n)), None, None))), SubjectPredicate(e,r)) =>
+    // ProperNoun object
+    case (NP(None, Left(Nbar(Left(ProperNoun(n)), None, None))), SubjectPredicate(e,r)) =>
       BinaryAtom(r, e, UniqueDesignations.entityConstant(n))
 
     // Non-Branching DP Every
@@ -50,12 +50,19 @@ object Translation {
       Universal(newContext, Conditional(translate(nbar, Subject(newContext)),translate(vbar, Subject(newContext))))
     }
 
-    // Non-Branching DP All
+    // Non-Branching DP Subject All
     case (VP(Some(NP(Some(
         DP(None, Left(Dbar(Left(Determiner(DValues.All)))))),
       Left(nbar))), vbar), NoContext) => {
       val newContext = UniqueDesignations.variableDesignation(NoContext)
       Universal(newContext, Conditional(translate(nbar, Subject(newContext)),translate(vbar, Subject(newContext))))
+    }
+
+    // DP ALL object
+    case (NP(Some(DP(None, Left(Dbar(Left(Determiner(DValues.All)))))),
+        Left(nbar)), ctx:SubjectPredicate) => {
+      val newvar = UniqueDesignations.variableDesignation(ctx)
+      Universal(newvar, Conditional(translate(nbar, Subject(newvar)), BinaryAtom(ctx.r, ctx.e, newvar)))
     }
 
     // Non-branching DP "No" -> Negative existential
@@ -70,6 +77,12 @@ object Translation {
     // NP with determiner "a", given single context, as in X is [a Y]
     case (NP(Some(DP(None, Left(Dbar(Left(Determiner(DValues.A)))))), nbar), ctx:Subject) =>
       translate(nbar, ctx)
+
+    // NP with determiner "a" and subj-predicate context (john eats [a fish])
+    case (NP(Some(DP(None, Left(Dbar(Left(Determiner(DValues.A)))))), nbar), ctx:SubjectPredicate) => {
+      val newvar = UniqueDesignations.variableDesignation(ctx)
+      Existential(newvar, Conjunction(translate(nbar, Subject(newvar)), BinaryAtom(ctx.r, ctx.e, newvar)))
+    }
 
     // NP with no determiner, with single context (as in "All Marines are candycanes")
     case (NP(None, nbar), ctx:Subject) =>
@@ -109,6 +122,11 @@ object Translation {
     // Non Branching Nbar
     case (Nbar(Left(Noun(n)), None, None), Subject(e)) =>
       Atom(UniqueDesignations.isARelation(n), e)
+
+    // Nbar with Verbal complement
+    case (Nbar(Left(Noun(n)), Some(VP(Some(NP(None,
+        Left(Nbar(Left(Pronoun(_)), None, None)))), vbar)), None), Subject(e)) =>
+      Conjunction(Atom(UniqueDesignations.isARelation(n), e), translate(vbar, Subject(e)))
 
     // is ____ (the "s" in is was removed for being a 1st person present suffix)
     case (Vbar(Left(Verb("i",false)), Some(np), None), e:Subject)  =>

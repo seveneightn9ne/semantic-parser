@@ -19,8 +19,17 @@ class Universe {
   val twoPlacePredicates = Map[(EntityConstant, EntityConstant, BinaryRelation), Boolean]()
 
   /** Get the truth value of Re */
-  def apply(e:EntityConstant, r:UnaryRelation):Boolean = applicationMap((e,r))
-  def apply(e:EntityConstant, f:EntityConstant, r:BinaryRelation):Boolean = twoPlacePredicates((e,f,r))
+  def apply(e:EntityConstant, r:UnaryRelation):Boolean = try {
+    applicationMap((e,r))
+  } catch {
+    case e:NoSuchElementException => false
+  }
+
+  def apply(e:EntityConstant, f:EntityConstant, r:BinaryRelation):Boolean = try{
+    twoPlacePredicates((e,f,r))
+  } catch {
+    case e:NoSuchElementException => false
+  }
 
   def put(e:EntityConstant) = entities add e
   def put(r:UnaryRelation) = unaryRelations add r
@@ -39,9 +48,18 @@ class Universe {
     twoPlacePredicates.put((e,f,r), b)
   }
 
+  override def equals(other:Any) = other match {
+    case u:Universe =>
+      u.applicationMap.equals(this.applicationMap) &&
+      u.twoPlacePredicates.equals(this.twoPlacePredicates)
+    case _ => false
+  }
+
+  override def hashCode = applicationMap.hashCode + twoPlacePredicates.hashCode
+
   override def toString = "\n[[Entities: " + entities.map(_.value).mkString(" ") + "\n" +
       (unaryRelations map {r => r.value + ": {" + (entities.filter{
-        e => applicationMap((e, r))}.map{e => e.value}.mkString(" ")) +
+        e => apply(e, r)}.map{e => e.value}.mkString(" ")) +
       "}" + "\n"} mkString "") +
       (binaryRelations map {r => r.value + ": {" + (twoPlacePredicates.filter{t => t._2}.map{t =>
         "(" + t._1._1.value + ", " + t._1._2.value + ")"}.mkString(" ")) + "}\n"} mkString "") + "]]\n"

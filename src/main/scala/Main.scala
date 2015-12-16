@@ -4,6 +4,8 @@ import scala.collection.mutable
 import scala.io.Source
 import com.codecommit.gll._
 import XPrules._
+import Translation._
+import Predicates._
 
 trait SentenceParser extends Parsers {
   def main(args: Array[String]) {
@@ -41,25 +43,56 @@ trait SentenceParser extends Parsers {
 	println("  runtime error: " + msg)
       }
     } else if (results.length == 1) {
-      //println("  " + results.head.toString)
       println("  " + results.head.map(s => s.asText).mkString(". "))
-      //println("  " + results.head.mkString("\n"))
       try {
-        val predicates = results.head.map(s => Translation.translate(s, Translation.NoContext))
-        println("  " + predicates.mkString("\n  "))
-        val conclusions = Conclusions.generateInterestingConclusions(predicates.toSet)
-        if (conclusions.size > 0) {
-          println("  Therefore:\n  " + conclusions.map{p => p.toString + " " + p.toEnglish}.mkString("\n  "))
-        } else {
-          println("  I don't have any interesting conclusions to draw.")
-        }
+        val predicates = results.head.map(s => translate(s, NoContext))
+        conclude(predicates)
       } catch {
-        case e:Translation.TranslationException =>
+        case e:TranslationException =>
           println("  Translation failure: " + e.message)
       }
     } else {
-      printf("  parse error: Ambiguous parse: %s valid trees%n", results.length.toString)
-      results.foreach(l => println(l map {Utils.prettyprint(_)}))
+      printf("  Warning: Ambiguous parse: %s valid trees%n", results.length.toString)
+      val goodresults:List[List[Predicate]] =
+        results.flatMap{list => allExists[Predicate](list.map{sentence => try {
+        Some(translate(sentence, NoContext))
+      } catch {
+        case e:TranslationException => None
+      }})}.toList
+      if (goodresults.length == 1) {
+        conclude(goodresults.toList.head)
+      } else {
+        println("  Error: No parses survived translation. Here were the parses:")
+        results.foreach{l => l.foreach{s => {
+          try {
+            translate(s,NoContext)
+          } catch {
+            case e:TranslationException => {
+              println(Utils.prettyprint(s))
+              println(e.message)
+            }
+          }
+        }}}
+      }
+    }
+  }
+
+  def allExists[A](l:List[Option[A]]):Option[List[A]] = {
+    val flat = l.flatMap{x=>x}
+    flat.length == l.length match {
+      case true => Some(flat)
+      case _ => None
+    }
+  }
+
+  def conclude(predicates:List[Predicate]) = {
+    println("  " + predicates.mkString("\n  "))
+    val conclusions = Conclusions.generateInterestingConclusions(predicates.toSet)
+    if (conclusions.size > 0) {
+      println("  Therefore:\n  " +
+        conclusions.map{p => p.toString + "\t" + p.toEnglish}.mkString("\n  "))
+    } else {
+      println("  I don't have any interesting conclusions to draw.")
     }
   }
 }
