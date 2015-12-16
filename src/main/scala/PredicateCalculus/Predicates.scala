@@ -64,7 +64,8 @@ object Predicates {
     def replace(v1:EntityVariable, e:Entity):Predicate = Existential(v, p.replace(v1, e))
     lazy val relations = p.relations
     lazy val binaryRelations = p.binaryRelations
-    lazy val entities = p.entities + UniqueDesignations.hypotheticalDesignation + UniqueDesignations.hypotheticalDesignation
+    //lazy val entities = p.entities + UniqueDesignations.hypotheticalDesignation + UniqueDesignations.hypotheticalDesignation
+    lazy val entities = p.entities
     override def toString = "(∃" + v.value + ")" + p.toString
     def toEnglish = "there is some entity " + v.value + " such that " + p.toEnglish
     def equivalent(other:Predicate) = other match {
@@ -77,7 +78,8 @@ object Predicates {
     def replace(v1:EntityVariable, e:Entity):Predicate = Universal(v, p.replace(v1,e))
     lazy val relations = p.relations
     lazy val binaryRelations = p.binaryRelations
-    lazy val entities = p.entities + UniqueDesignations.hypotheticalDesignation
+    //lazy val entities = p.entities + UniqueDesignations.hypotheticalDesignation
+    lazy val entities = p.entities
     override def toString = "(∀" + v.value + ")" + p.toString
     def toEnglish = "for all entities " + v.value + ", " + p.toEnglish
     def equivalent(other:Predicate) = other match {

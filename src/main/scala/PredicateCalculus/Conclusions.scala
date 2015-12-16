@@ -7,7 +7,9 @@ object Conclusions {
   def extractRelations(predicates:Set[Predicate]):Set[UnaryRelation] = predicates flatMap {p => p.relations}
   def extractBinaryRelations(predicates:Set[Predicate]):Set[BinaryRelation] =
     predicates flatMap {p => p.binaryRelations}
-  def extractEntities(predicates:Set[Predicate]):Set[EntityConstant] = predicates flatMap {p => p.entities}
+  def extractEntities(predicates:Set[Predicate]):Set[EntityConstant] = predicates.flatMap{p => p.entities} +
+    UniqueDesignations.hypotheticalDesignation +
+    UniqueDesignations.hypotheticalDesignation
 
   def predictNumUniverses(predicates:Set[Predicate]) = {
     val e = extractEntities(predicates).size
@@ -168,6 +170,10 @@ object Conclusions {
   def generateAtoms(e:Set[EntityConstant], r:Set[UnaryRelation]):Set[Predicate] = e flatMap {entity =>
     r flatMap {relation => List(Atom(relation, entity), Negation(Atom(relation, entity)))}}
 
+  def generateBinaryAtoms(e:Set[EntityConstant], r:Set[BinaryRelation]):Set[Predicate] = e flatMap {e1 =>
+    e flatMap {e2 =>
+      r flatMap {relation => List(BinaryAtom(relation, e1, e2), Negation(BinaryAtom(relation, e1, e2)))}}}
+
   def generateUniversalConditionals(from:Set[UnaryRelation]):Set[Predicate] = from flatMap {antecedent =>
     from flatMap {consequent => antecedent match {
       case `consequent` => None
@@ -183,6 +189,20 @@ object Conclusions {
     val v = UniqueDesignations.variableDesignation(Translation.NoContext)
     Existential(v, Atom(relation, v))
   }}
+
+  def generateExistentialConjunctions(from:Set[UnaryRelation]):Set[Predicate] = from flatMap {ra =>
+    from flatMap {rb => ra match {
+      case `rb` => None
+      case _ => {
+        val v = UniqueDesignations.variableDesignation(Translation.NoContext)
+        val a = Atom(ra, v)
+        val b = Atom(rb, v)
+        List(Existential(v, Conjunction(a,b)),
+          Existential(v, Conjunction(Negation(a), b)),
+          Existential(v, Conjunction(a, Negation(b))),
+          Existential(v, Conjunction(Negation(a), Negation(b))))
+      }
+    }}}
 
   def generateUniversals(from:Set[UnaryRelation]):Set[Predicate] = from map {relation => {
     val v = UniqueDesignations.variableDesignation(Translation.NoContext)
@@ -210,8 +230,10 @@ object Conclusions {
     val entities:Set[EntityConstant] = universes.head.entities.toSet
     //println("Generating conclusions...")
     val allConclusions = generateUniversalConditionals(relations) ++ generateAtoms(
-      entities, relations) ++ generateExistentials(relations) ++ generateUniversals(relations)
+      entities, relations) ++ generateExistentials(relations) ++ generateUniversals(relations) ++
+      generateExistentialConjunctions(relations)
     //println("Filtering by validity...")
+    println(allConclusions)
     validConclusions(allConclusions, universes)
   }
 
