@@ -60,6 +60,7 @@ trait SentenceParser extends Parsers {
         case e:TranslationException => None
       }})}.toList
       if (goodresults.length == 1) {
+        println("  But there was only one surviving translation! :)")
         conclude(goodresults.toList.head)
       } else {
         println("  Error: No parses survived translation. Here were the parses:")
@@ -87,12 +88,18 @@ trait SentenceParser extends Parsers {
 
   def conclude(predicates:List[Predicate]) = {
     println("  " + predicates.mkString("\n  "))
-    val conclusions = Conclusions.generateInterestingConclusions(predicates.toSet)
-    if (conclusions.size > 0) {
-      println("  Therefore:\n  " +
-        conclusions.map{p => p.toString + "\t" + p.toEnglish}.mkString("\n  "))
+    val numU = Conclusions.predictNumUniverses(predicates.toSet)
+    if (numU > Math.pow(2, 32)) {
+      println("  Too many possible universes to evaluate all of them. :(")
     } else {
-      println("  I don't have any interesting conclusions to draw.")
+      //println("  Evaluating " + numU + " possible universes. This will take a while...")
+      val conclusions = Conclusions.generateInterestingConclusions(predicates.toSet)
+      if (conclusions.size > 0) {
+        println("  Therefore:\n  " +
+          conclusions.map{p => p.toString + "\t" + p.toEnglish}.mkString("\n  "))
+      } else {
+        println("  I don't have any interesting conclusions to draw.")
+      }
     }
   }
 }

@@ -9,6 +9,13 @@ object Conclusions {
     predicates flatMap {p => p.binaryRelations}
   def extractEntities(predicates:Set[Predicate]):Set[EntityConstant] = predicates flatMap {p => p.entities}
 
+  def predictNumUniverses(predicates:Set[Predicate]) = {
+    val e = extractEntities(predicates).size
+    val r1 = extractRelations(predicates).size
+    val r2 = extractBinaryRelations(predicates).size
+    Math.pow(2, e*r1)*Math.pow(2, e*e*r2)
+  }
+
   def allUniverses(e:Set[EntityConstant], r:Set[UnaryRelation], r2:Set[BinaryRelation]):List[Universe] = {
     val entity = e.toIndexedSeq
     val relation = r.toIndexedSeq
@@ -16,19 +23,19 @@ object Conclusions {
     //println("Finding all atomic universes...")
     //println(e.size*r.size)
     //println(Utils.bitstrings(e.size*r.size).mkString("\n"))
-    val universes = Utils.bitstrings(e.size * r.size) map { bitstring =>
+    val universes = Utils.bitstrings(e.size * r.size).map{ bitstring:IndexedSeq[Boolean] => {
         val universe = new Universe()
         //println(bitstring)
         bitstring.indices.foreach { i =>
           universe.relate(entity(i % e.size), relation(i / e.size), bitstring(i))
         }
         universe
-      }
+    }}
     //println("Finding all binary universes...")
     val binaryRelation = r2.toIndexedSeq
     //println("  all relations:" + binaryRelation)
     //println("  all entities:" + e)
-    val binaryUniverses = Utils.bitstrings(e.size * r2.size) map { bitstring =>
+    val binaryUniverses = Utils.bitstrings(e.size * e.size * r2.size) map { bitstring =>
         val universe = new Universe()
         bitstring.indices.foreach { i => {
           //println(bitstring)
