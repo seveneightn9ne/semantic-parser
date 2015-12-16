@@ -60,7 +60,7 @@ trait SentenceParser extends Parsers {
         case e:TranslationException => None
       }})}.toList
       if (goodresults.length == 1) {
-        println("  But there was only one surviving translation! :)")
+        println("  But there was only one surviving translation! :)\n")
         conclude(goodresults.toList.head)
       } else {
         println("  Error: No parses survived translation. Here were the parses:")
