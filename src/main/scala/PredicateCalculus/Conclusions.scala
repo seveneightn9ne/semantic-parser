@@ -12,10 +12,13 @@ object Conclusions {
   def allUniverses(e:Set[EntityConstant], r:Set[UnaryRelation], r2:Set[BinaryRelation]):List[Universe] = {
     val entity = e.toIndexedSeq
     val relation = r.toIndexedSeq
+    //println(relation)
     //println("Finding all atomic universes...")
-    val universes = Utils.refeed[List[List[Boolean]]](
-      e.size * r.size, Utils.expandBitstring, List[List[Boolean]](List())) map { bitstring =>
+    //println(e.size*r.size)
+    //println(Utils.bitstrings(e.size*r.size).mkString("\n"))
+    val universes = Utils.bitstrings(e.size * r.size) map { bitstring =>
         val universe = new Universe()
+        //println(bitstring)
         bitstring.indices.foreach { i =>
           universe.relate(entity(i % e.size), relation(i / e.size), bitstring(i))
         }
@@ -25,18 +28,20 @@ object Conclusions {
     val binaryRelation = r2.toIndexedSeq
     //println("  all relations:" + binaryRelation)
     //println("  all entities:" + e)
-    val binaryUniverses = Utils.refeed[List[List[Boolean]]](
-      e.size * e.size * r2.size, Utils.expandBitstring, List[List[Boolean]](List())) map { bitstring =>
+    val binaryUniverses = Utils.bitstrings(e.size * r2.size) map { bitstring =>
         val universe = new Universe()
         bitstring.indices.foreach { i => {
+          //println(bitstring)
+          //println(i)
+
           universe.relate(entity(i % e.size), entity((i/e.size)%e.size),
             binaryRelation(i/(e.size*e.size)), bitstring(i))
-          println(binaryRelation(i/(e.size*e.size)) + "(" + entity(i%e.size) + "," + entity((i/e.size)%e.size) + ")")
+          //println(binaryRelation(i/(e.size*e.size)) + "(" + entity(i%e.size) + "," + entity((i/e.size)%e.size) + ")")
         }}
         universe
     }
     //println("Combining universes...")
-    binaryUniverses flatMap{ bu => universes map { u => combineUniverses(List(bu, u)) }}
+    binaryUniverses.flatMap{ bu => universes map { u => combineUniverses(List(bu, u)) }}.toList
   }
   def combineUniverses(us:List[Universe]):Universe = {
     val u = new Universe()
@@ -132,8 +137,8 @@ object Conclusions {
     var pastPredicates = Set[Predicate]()
     //println(predicates)
     predicates foreach {predicate => {
-      println(universes.size + " universes.")
-      println("Incorporating predicate " + predicate + "...")
+      //println(universes.size + " universes.")
+      //println("Incorporating predicate " + predicate + "...")
       val newEntities = predicate.entities
       //println(predicate)
       //println(newEntities)
@@ -145,9 +150,9 @@ object Conclusions {
         //val i = incorporate(universe, newEntities).filter{u => pastPredicates.forall{p => p.evaluate(u)}}
         //println("Incorporating " + i)
         val i = npus.map{u => combineUniverses(List(universe, u))}
-        println(i.size + " new universes")
+        //println(i.size + " new universes")
         val j = i.filter{u => pastPredicates.forall{p => p.evaluate(u)}}
-        println(j.size + " after filtering")
+        //println(j.size + " after filtering")
         j
       }}
     }}
@@ -192,7 +197,8 @@ object Conclusions {
   def generateConclusions(priors:Set[Predicate]):Set[Predicate] = {
     if (priors.size == 0) return Set()
     //println("Generating universes...")
-    val universes:List[Universe] = possibleUniverses2(priors)
+    val universes:List[Universe] = possibleUniverses(priors)
+    //println(universes)
     if (universes.size == 0) return Set()
     val relations:Set[UnaryRelation] = universes.head.unaryRelations.toSet
     val entities:Set[EntityConstant] = universes.head.entities.toSet

@@ -13,10 +13,11 @@ object Utils {
     Set[List[Boolean]](true :: bitstring, false :: bitstring)
   }
 
-  def toBitstring(num:Int, bits:Int):IndexedSeq[Boolean] = num.toBinaryString.takeRight(bits).map(_ match {
-    case '1' => true; case '0' => false})
+  def toBitstring(num:Int, bits:Int):IndexedSeq[Boolean] =
+    ("0"*bits + num.toBinaryString).takeRight(bits).map(_ match {
+      case '1' => true; case '0' => false})
 
-  def bitstrings(bits:Int) = (0 to 2^(bits)).map(Utils.toBitstring(_, bits))
+  def bitstrings(bits:Int) = (0 to Math.pow(2,bits).toInt-1).map(Utils.toBitstring(_, bits))
 
 
   /** Pretty print tree */
