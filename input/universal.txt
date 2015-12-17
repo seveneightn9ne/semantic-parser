@@ -1,2 +1,3 @@
 Every man eats.
 Marc is a man.
+Therefore, Marc farts.

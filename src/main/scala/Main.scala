@@ -46,7 +46,7 @@ trait SentenceParser extends Parsers {
       println("  " + results.head.map(s => s.asText).mkString(". "))
       try {
         val predicates = results.head.map(s => translate(s, NoContext))
-        conclude(predicates)
+        concludeOrValidate(predicates)
       } catch {
         case e:TranslationException =>
           println("  Translation failure: " + e.message)
@@ -61,7 +61,7 @@ trait SentenceParser extends Parsers {
       }})}.toList
       if (goodresults.length == 1) {
         println("  But there was only one surviving translation! :)\n")
-        conclude(goodresults.toList.head)
+        concludeOrValidate(goodresults.toList.head)
       } else {
         println("  Error: No parses survived translation. Here were the parses:")
         results.foreach{l => l.foreach{s => {
@@ -86,20 +86,37 @@ trait SentenceParser extends Parsers {
     }
   }
 
+  def concludeOrValidate(predicates:List[Predicate]) =
+    if(predicates.exists(_ match {case c:Conclusion => true; case _ => false}))
+      validate(predicates.filter(_ match {case c:Conclusion => false; case _=> true}),
+        predicates.flatMap(_ match {case c:Conclusion => Some(c); case _ => None}))
+    else conclude(predicates)
+
   def conclude(predicates:List[Predicate]) = {
     println("  " + predicates.mkString("\n  "))
+    println("\n  Generating conclusions...")
     val numU = Conclusions.predictNumUniverses(predicates.toSet)
-    if (numU > Math.pow(2, 32)) {
+    if (numU > Math.pow(2, 22)) {
       println("  Too many possible universes to evaluate all of them. :(")
     } else {
       //println("  Evaluating " + numU + " possible universes. This will take a while...")
       val conclusions = Conclusions.generateInterestingConclusions(predicates.toSet)
       if (conclusions.size > 0) {
         println("  Therefore:\n  " +
-          conclusions.map{p => p.toString + "\t" + p.toEnglish}.mkString("\n  "))
+          conclusions.map{p => p.toString + " \"" + p.toEnglish.capitalize + "\""}.mkString("\n  "))
       } else {
         println("  I don't have any interesting conclusions to draw.")
       }
     }
+  }
+
+  def validate(priors:List[Predicate], conclusions:List[Conclusion]) = {
+    println("  " + (priors++conclusions).mkString("\n  "))
+    println("\n  Validating your conclusion...")
+    val universes = Conclusions.possibleUniverses(priors.toSet)
+    if(conclusions.forall(c => universes.forall(u => c.evaluate(u))))
+      println("  Valid conclusion!")
+    else
+      println("  Invalid conclusion!")
   }
 }

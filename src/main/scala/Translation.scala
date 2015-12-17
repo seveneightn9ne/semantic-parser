@@ -4,6 +4,7 @@ import XPrules._
 import NPrules._
 import DPrules._
 import VPrules._
+import AdvPrules._
 import Predicates._
 
 object Translation {
@@ -15,6 +16,12 @@ object Translation {
   case class SubjectPredicate(e:Entity, r:BinaryRelation) extends Context
 
   def translate(phrase:XP[Word,Word,Word,Word], context:Context):Predicate = (phrase, context) match {
+
+    // Conclusions
+    case (VP(np, Left(Vbar(Right(vbar), None, Some(AdvP(Left(Advbar(Left(Adverb(AdvValues.Therefore)), None))))))), NoContext) => np match {
+      case Some(n) => Conclusion(translate(VP(n, vbar), NoContext))
+      case _ => Conclusion(translate(VP(vbar), NoContext))
+    }
 
     // Special pronoun subjects
     case (VP(Some(NP(None, Left(Nbar(Left(Pronoun(Pron.Everyone)), compl, None)))), vbar), NoContext) => {
@@ -40,6 +47,10 @@ object Translation {
 
     // ProperNoun object
     case (NP(None, Left(Nbar(Left(ProperNoun(n)), None, None))), SubjectPredicate(e,r)) =>
+      BinaryAtom(r, e, UniqueDesignations.entityConstant(n))
+
+    // MassNoun object ("Miles eats [meat]")
+    case (NP(None, Left(Nbar(Left(MassNoun(n)), None, None))), SubjectPredicate(e,r)) =>
       BinaryAtom(r, e, UniqueDesignations.entityConstant(n))
 
     // Non-Branching DP Every
@@ -104,7 +115,8 @@ object Translation {
     case (VP(Some(NP(None, Left(Nbar(Left(Pronoun(Pron.Who)), None, None)))), vbar), ctx:Subject) =>
       translate(vbar, ctx)
 
-    case _ => throw new TranslationException("Can't translate XP phrase: \"" + phrase.asText + "\" " + phrase)
+    case _ => throw new TranslationException("Can't translate XP phrase: \"" + phrase.asText + "\"\n" +
+      Utils.prettyprint(phrase))
 
   }
 
@@ -145,7 +157,7 @@ object Translation {
       translate(np, SubjectPredicate(entity, UniqueDesignations.binaryRelation(v)))
 
     case _ => throw new TranslationException(
-      "Can't translate phrase: \"" + phrase.asText + "\" " +  phrase)
+      "Can't translate phrase: \"" + phrase.asText + "\"\n" +  Utils.prettyprint(phrase))
   }
 
 }

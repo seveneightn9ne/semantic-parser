@@ -8,6 +8,7 @@ import XPrules._
 import NPrules._
 import VPrules._
 import DPrules._
+import AdvPrules._
 
 object EnglishParser extends SentenceParser with RegexParsers {
   val bannedWords = Determiner.values + "There"
@@ -23,6 +24,7 @@ object EnglishParser extends SentenceParser with RegexParsers {
   lazy val singularnp:Parser[NP] = (
       (singulardp <~ " ") ~ noun ~ (" " ~> singularcomplvp).? ^^ {(dp, n, vp) => NP(Some(dp), n, vp)}
     | propernoun ^^ {NP(_)}
+    | massnoun   ^^ {NP(_)}
     | (preconj <~ " ").? ~ (singularnp <~ " ") ~ (conj <~ " ") ~ singularnp ^^ {(p,l,c,r) =>
           NP(ConjP[NP](p, l, c, r))}
   )
@@ -33,9 +35,9 @@ object EnglishParser extends SentenceParser with RegexParsers {
 
   ////////////////////////// Verb Phrases (sentences :)
   lazy val vp = (
-      "[Tt]here ".r ~> vbar               ^^ {v => VP(v)}
-    | (singularnp <~ " ") ~ singularvbar  ^^ {(np,v) => VP(np, v)}
-    | (pluralnp <~ " ") ~ pluralvbar      ^^ {(np,v) => VP(np, v)}
+      therefore.? ~ ("[Tt]here ".r ~> vbar)             ^^ {(t,v) => VP(t,v)}
+    | therefore.? ~ (singularnp <~ " ") ~ singularvbar  ^^ {(t,np,v) => VP(t,np, v)}
+    | therefore.? ~ (pluralnp <~ " ") ~ pluralvbar      ^^ {(t,np,v) => VP(t,np, v)}
   )
   lazy val pluralcomplvp = (pluralwhnp <~ " ") ~ pluralvbar ^^ {(n,v) => VP(n,v)}
   lazy val singularcomplvp = (singularwhnp <~ " ") ~ singularvbar ^^ {(n,v) => VP(n,v)}
@@ -60,10 +62,12 @@ object EnglishParser extends SentenceParser with RegexParsers {
       "and".r       ^^ {c => Conj(ConjV.And)}
     | "or".r        ^^ {c => Conj(ConjV.Or)})
 
-  lazy val singularverb = "\\w+s".r ^^ {v => Verb(v.dropRight(1))}
-  lazy val pluralverb   = "\\w+".r  ^^ {v => Verb(v, true)} filter(v => !v.asText.endsWith("s"))
-  lazy val noun         = "\\w+".r  ^^ {n => Noun(n,false)} filter(n => !bannedWords.contains(n.asText))
-  lazy val propernoun   = "[A-Z]\\w+".r ^^ {ProperNoun(_)} filter(n => !bannedWords.contains(n.asText))
+  lazy val singularverb = "\\w+s".r ^^ {v => Verb(v.dropRight(1))} filter(goodWord)
+  lazy val pluralverb   = "\\w+".r  ^^ {v => Verb(v, true)} filter(v =>
+      !v.asText.endsWith("s") && goodWord(v))
+  lazy val noun         = "\\w+".r  ^^ {n => Noun(n,false)} filter(goodWord)
+  lazy val propernoun   = "[A-Z]\\w+".r ^^ {ProperNoun(_)} filter(goodWord)
+  lazy val massnoun     = "\\w+".r ^^ {MassNoun(_)} filter(goodWord)
   lazy val pluralnoun   = "\\w+s".r ^^ {n => Noun(n.dropRight(1), true)}
   lazy val pluralwhnoun = (
       "[Ww]ho".r ^^ {n => Noun(n, true)}
@@ -71,7 +75,8 @@ object EnglishParser extends SentenceParser with RegexParsers {
   lazy val singularwhnoun = (
       "[Ww]ho".r ^^ {n => Noun(n, false)}
     | "[Tt]hat".r ^^ {n => Noun(n, false)})
-
+  lazy val therefore = "[Tt]herefore".r  <~ ",".? <~ " " ^^ {a => AdvP(AdvValues.Therefore)}
+  def goodWord(w:Word) = !bannedWords.contains(w.asText)
 
   def parser = sentences
   override val whitespace = "".r

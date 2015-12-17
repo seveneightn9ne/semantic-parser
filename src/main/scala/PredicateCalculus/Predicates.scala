@@ -32,6 +32,19 @@ object Predicates {
     def toEnglish:String
     def equivalent(other:Predicate):Boolean
   }
+  case class Conclusion(p:Predicate) extends Predicate {
+    def evaluate(universe:Universe) = p.evaluate(universe)
+    def replace(v:EntityVariable, e:Entity) = p.replace(v,e)
+    val relations = p.relations
+    val binaryRelations = p.binaryRelations
+    val entities = p.entities
+    def toEnglish = "Therefore, " + p.toEnglish
+    def equivalent(other:Predicate) = other match {
+      case Conclusion(q) => p.equivalent(q)
+      case _ => false
+    }
+    override def toString = "∴ " + p.toString
+  }
   case class Conjunction(a:Predicate, b:Predicate) extends Predicate {
     def evaluate(universe:Universe) = a.evaluate(universe) && b.evaluate(universe)
     def replace(v:EntityVariable, e:Entity):Predicate = Conjunction(a.replace(v,e), b.replace(v,e))

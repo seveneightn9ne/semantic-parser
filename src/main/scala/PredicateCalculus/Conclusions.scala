@@ -233,7 +233,7 @@ object Conclusions {
       entities, relations) ++ generateExistentials(relations) ++ generateUniversals(relations) ++
       generateExistentialConjunctions(relations)
     //println("Filtering by validity...")
-    println(allConclusions)
+    //println(allConclusions)
     validConclusions(allConclusions, universes)
   }
 

@@ -39,6 +39,9 @@ object NPrules {
     override def asText = text.capitalize
     val plural = false
   }
+  case class MassNoun(text:String) extends Noun {
+    val plural = false
+  }
   object Noun {
     def apply(text:String, plural:Boolean=false) = try {
       Pronoun(Pron.withName(text.toLowerCase.capitalize))
