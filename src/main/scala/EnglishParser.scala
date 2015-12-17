@@ -65,9 +65,9 @@ object EnglishParser extends SentenceParser with RegexParsers {
   lazy val singularverb = "\\w+s".r ^^ {v => Verb(v.dropRight(1))} filter(goodWord)
   lazy val pluralverb   = "\\w+".r  ^^ {v => Verb(v, true)} filter(v =>
       !v.asText.endsWith("s") && goodWord(v))
-  lazy val noun         = "\\w+".r  ^^ {n => Noun(n,false)} filter(goodWord)
+  lazy val noun         = "[a-z]\\w+".r  ^^ {n => Noun(n,false)} filter(goodWord)
   lazy val propernoun   = "[A-Z]\\w+".r ^^ {ProperNoun(_)} filter(goodWord)
-  lazy val massnoun     = "\\w+".r ^^ {MassNoun(_)} filter(goodWord)
+  lazy val massnoun     = "[a-z]\\w+".r ^^ {MassNoun(_)} filter(goodWord)
   lazy val pluralnoun   = "\\w+s".r ^^ {n => Noun(n.dropRight(1), true)}
   lazy val pluralwhnoun = (
       "[Ww]ho".r ^^ {n => Noun(n, true)}

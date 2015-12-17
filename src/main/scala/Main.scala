@@ -62,7 +62,7 @@ trait SentenceParser extends Parsers {
       if (goodresults.length == 1) {
         println("  But there was only one surviving translation! :)\n")
         concludeOrValidate(goodresults.toList.head)
-      } else {
+      } else if (goodresults.length == 0) {
         println("  Error: No parses survived translation. Here were the parses:")
         results.foreach{l => l.foreach{s => {
           try {
@@ -74,6 +74,9 @@ trait SentenceParser extends Parsers {
             }
           }
         }}}
+      } else {
+        println("  Error: Multiple valid parses:")
+        goodresults.foreach(r => println("  " + r))
       }
     }
   }
