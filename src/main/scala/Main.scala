@@ -10,8 +10,9 @@ import Predicates._
 trait SentenceParser extends Parsers {
   def main(args: Array[String]) {
     for (file <- args) {
-      println(file)
-      println("Output:")
+      println("\nInput: " + file)
+      println("  " + LineStream(Source fromFile file).toString.split("\n").mkString("\n  "))
+      println("\nOutput:")
       val results = parser(LineStream(Source fromFile file))
       if (results exists {_.isInstanceOf[Success[List[Sentence]]]}) {
 	handleSuccesses(for (Success(tree, _) <- results) yield tree)
@@ -43,7 +44,7 @@ trait SentenceParser extends Parsers {
 	println("  runtime error: " + msg)
       }
     } else if (results.length == 1) {
-      println("  " + results.head.map(s => s.asText).mkString(". "))
+      //println("  " + results.head.map(s => s.asText).mkString(". "))
       try {
         val predicates = results.head.map(s => translate(s, NoContext))
         concludeOrValidate(predicates)
@@ -52,7 +53,7 @@ trait SentenceParser extends Parsers {
           println("  Translation failure: " + e.message)
       }
     } else {
-      printf("  Warning: Ambiguous parse: %s valid trees%n", results.length.toString)
+      printf("  [warning] Ambiguity: %s valid English parses%n", results.length.toString)
       val goodresults:List[List[Predicate]] =
         results.flatMap{list => allExists[Predicate](list.map{sentence => try {
         Some(translate(sentence, NoContext))
@@ -60,10 +61,10 @@ trait SentenceParser extends Parsers {
         case e:TranslationException => None
       }})}.toList
       if (goodresults.length == 1) {
-        println("  But there was only one surviving translation! :)\n")
+        println("  But there was only one surviving translation!\n")
         concludeOrValidate(goodresults.toList.head)
       } else if (goodresults.length == 0) {
-        println("  Error: No parses survived translation. Here were the parses:")
+        println("  [error] No parses survived translation. Here were the parses:")
         results.foreach{l => l.foreach{s => {
           try {
             translate(s,NoContext)
@@ -75,8 +76,23 @@ trait SentenceParser extends Parsers {
           }
         }}}
       } else {
-        println("  Error: Multiple valid parses:")
-        goodresults.foreach(r => println("  " + r))
+        println("  [error] Multiple translatable parses:")
+        results.transpose.foreach{parses => {
+          if (parses.toSet.size > 1) // parses are different
+            if(parses.toSet.forall(s => try{
+              translate(s, NoContext)
+              true
+            } catch {
+              case e:TranslationException => false
+            })) {
+              // All alternatives are translatable
+              println(parses.toSet.map{p:Sentence =>
+                Utils.prettyprint(p)}.mkString("\n"))
+          }
+        else {}
+
+        }}
+        //goodresults.foreach(r => println("  " + r))
       }
     }
   }

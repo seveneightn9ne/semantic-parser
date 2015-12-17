@@ -34,13 +34,16 @@ object NPrules {
       case true => text + "s"
       case _ => text
     }
+    override def meta = "CommonNoun" + (if(plural) "(plural)" else "(singular)")
   }
   case class ProperNoun(text:String) extends Noun {
     override def asText = text.capitalize
     val plural = false
+    override def meta = "ProperNoun"
   }
   case class MassNoun(text:String) extends Noun {
     val plural = false
+    override def meta = "MassNoun"
   }
   object Noun {
     def apply(text:String, plural:Boolean=false) = try {

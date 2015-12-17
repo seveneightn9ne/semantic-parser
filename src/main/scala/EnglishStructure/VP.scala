@@ -37,5 +37,6 @@ object VPrules {
         case _ => text + "s"
       }
     }
+    override def meta = "Verb" + (if(pluralSubjAgr) "(plural)" else "")
   }
 }

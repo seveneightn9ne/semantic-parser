@@ -35,7 +35,7 @@ object Utils {
       case Some(c) => "\n├─ "
       case None => "\n└─ "
     }) + (xbar.head match {
-      case Left(h) => h.getClass.getSimpleName + " \033[1m" + h.asText + "\033[0m\n"
+      case Left(h) => h.meta + " \033[1m" + h.asText + "\033[0m\n"
       case Right(h) => prettyprint(h).split("\n").mkString("\n   ")
     }) + (xbar.complement match {
       case Some(c) => "└─ " + prettyprint(c).split("\n").mkString("\n   ")

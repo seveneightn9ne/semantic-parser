@@ -50,6 +50,7 @@ object XPrules {
   trait Word {
     val text:String
     def asText = text
+    def meta:String = this.getClass.getSimpleName
   }
 
   trait ClosedClassWord[T] extends Enumeration with Word {

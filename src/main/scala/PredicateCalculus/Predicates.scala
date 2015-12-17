@@ -54,7 +54,9 @@ object Predicates {
     override def toString = "(" + a.toString + " & " + b.toString + ")"
     def toEnglish = a.toEnglish + " and " + b.toEnglish
     def equivalent(other:Predicate) = other match {
-      case Conjunction(a1, b1) => a.equivalent(a1) && b.equivalent(b1)
+      case Conjunction(a1, b1) =>
+        (a.equivalent(a1) && b.equivalent(b1)) ||
+        (a.equivalent(b1) && b.equivalent(a1))
       case _ => false
     }
   }
@@ -68,7 +70,9 @@ object Predicates {
     override def toString = "(" + a.toString + " | " + b.toString + ")"
     def toEnglish = "either " + a.toEnglish + ", or " + b.toEnglish
     def equivalent(other:Predicate) = other match {
-      case Disjunction(a1, b1) => a.equivalent(a1) && b.equivalent(b1)
+      case Disjunction(a1, b1) =>
+        (a.equivalent(a1) && b.equivalent(b1)) ||
+        (a.equivalent(b1) && b.equivalent(a1))
       case _ => false
     }
   }
@@ -122,7 +126,9 @@ object Predicates {
     override def toString = "(" + a.toString + " ↔ " + b.toString + ")"
     def toEnglish = a.toEnglish + " if and only if " + b.toString
     def equivalent(other:Predicate) = other match {
-      case Biconditional(a1, b1) => a.equivalent(a1) && b.equivalent(b1)
+      case Biconditional(a1, b1) =>
+        (a.equivalent(a1) && b.equivalent(b1)) ||
+        (a.equivalent(b1) && b.equivalent(a1))
       case _ => false
     }
   }
