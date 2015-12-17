@@ -194,7 +194,7 @@ object Predicates {
       case (c:EntityConstant, _) => Set[EntityConstant](c)
       case _ => Set[EntityConstant]()
     }
-    override def toString = relation.value + "(" + e.value + ", " + f.value + ")"
+    override def toString = relation.value + e.value + f.value
     def toEnglish = e.toEnglish + " " + VPrules.Verb(relation.toEnglish, false).asText +
         " " + f.toEnglish
     def equivalent(other:Predicate) = other match {

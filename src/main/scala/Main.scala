@@ -111,12 +111,23 @@ trait SentenceParser extends Parsers {
   }
 
   def validate(priors:List[Predicate], conclusions:List[Conclusion]) = {
-    println("  " + (priors++conclusions).mkString("\n  "))
-    println("\n  Validating your conclusion...")
-    val universes = Conclusions.possibleUniverses(priors.toSet)
-    if(conclusions.forall(c => universes.forall(u => c.evaluate(u))))
-      println("  Valid conclusion!")
-    else
-      println("  Invalid conclusion!")
+    println("  " + priors.mkString("\n  "))
+    println("\n  Validating your conclusion by searching for counterexamples...")
+    val numU = Conclusions.predictNumUniverses((priors ++ conclusions).toSet)
+    if (numU > Math.pow(2, 22)) println("Too many possible universes to search through :(")
+    else {
+      val universes = Conclusions.allUniverses(
+        Conclusions.extractEntities(priors ++ conclusions),
+        Conclusions.extractRelations(priors ++ conclusions),
+        Conclusions.extractBinaryRelations(priors ++ conclusions)).filter{ u =>
+          priors.forall(_.evaluate(u))}
+      conclusions.foreach(c => {
+        val badu = universes.filter(!c.evaluate(_))
+        if(badu.size == 0)
+          println("  \033[32m✓\033[0m " + c + " (valid)")
+        else
+          println("  \033[31m✗\033[0m " + c + " (INVALID)\n  Counterexample: " + badu.head.toString.split("\n").mkString("\n  "))
+    })}
+
   }
 }

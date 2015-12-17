@@ -4,12 +4,14 @@ import Predicates._
 
 object Conclusions {
 
-  def extractRelations(predicates:Set[Predicate]):Set[UnaryRelation] = predicates flatMap {p => p.relations}
-  def extractBinaryRelations(predicates:Set[Predicate]):Set[BinaryRelation] =
-    predicates flatMap {p => p.binaryRelations}
-  def extractEntities(predicates:Set[Predicate]):Set[EntityConstant] = predicates.flatMap{p => p.entities} +
+  def extractRelations(predicates:Iterable[Predicate]):Set[UnaryRelation] =
+    predicates.flatMap{p => p.relations}.toSet
+  def extractBinaryRelations(predicates:Iterable[Predicate]):Set[BinaryRelation] =
+    predicates.flatMap{p => p.binaryRelations}.toSet
+  def extractEntities(predicates:Iterable[Predicate]):Set[EntityConstant] =
+    (predicates.flatMap{p => p.entities}.toSet +
     UniqueDesignations.hypotheticalDesignation +
-    UniqueDesignations.hypotheticalDesignation
+    UniqueDesignations.hypotheticalDesignation)
 
   def predictNumUniverses(predicates:Set[Predicate]) = {
     val e = extractEntities(predicates).size

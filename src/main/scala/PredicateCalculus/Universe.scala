@@ -57,10 +57,10 @@ class Universe {
 
   override def hashCode = applicationMap.hashCode + twoPlacePredicates.hashCode
 
-  override def toString = "\n[[Entities: " + entities.map(_.value).mkString(" ") + "\n" +
-      (unaryRelations map {r => r.value + ": {" + (entities.filter{
+  override def toString = "Universe(\n  Domain: " + entities.map(_.value).mkString(" ") + "\n" +
+      (unaryRelations map {r => "  Set " + r.value + ": {" + (entities.filter{
         e => apply(e, r)}.map{e => e.value}.mkString(" ")) +
       "}" + "\n"} mkString "") +
-      (binaryRelations map {r => r.value + ": {" + (twoPlacePredicates.filter{t => t._2}.map{t =>
-        "(" + t._1._1.value + ", " + t._1._2.value + ")"}.mkString(" ")) + "}\n"} mkString "") + "]]\n"
+      (binaryRelations map {r => "  Set " + r.value + ": {" + (twoPlacePredicates.filter{t => t._2}.map{t =>
+        "(" + t._1._1.value + ", " + t._1._2.value + ")"}.mkString(" ")) + "}\n"} mkString "") + ")\n"
 }
