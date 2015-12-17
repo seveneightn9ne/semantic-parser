@@ -130,7 +130,7 @@ trait SentenceParser extends Parsers {
   }
 
   def validate(priors:List[Predicate], conclusions:List[Conclusion]) = {
-    println("  " + priors.mkString("\n  "))
+    println("  " + (priors++conclusions).mkString("\n  "))
     println("\n  Validating your conclusion by searching for counterexamples...")
     val numU = Conclusions.predictNumUniverses((priors ++ conclusions).toSet)
     if (numU > Math.pow(2, 22)) println("Too many possible universes to search through :(")

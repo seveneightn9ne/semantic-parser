@@ -51,7 +51,7 @@ object Predicates {
     lazy val relations = a.relations ++ b.relations
     lazy val binaryRelations = a.binaryRelations ++ b.binaryRelations
     lazy val entities = a.entities ++ b.entities
-    override def toString = "(" + a.toString + " & " + b.toString + ")"
+    override def toString = "(" + a.toString + " ∧ " + b.toString + ")"
     def toEnglish = a.toEnglish + " and " + b.toEnglish
     def equivalent(other:Predicate) = other match {
       case Conjunction(a1, b1) =>
@@ -67,7 +67,7 @@ object Predicates {
     lazy val binaryRelations = a.binaryRelations ++ b.binaryRelations
 
     lazy val entities = a.entities ++ b.entities
-    override def toString = "(" + a.toString + " | " + b.toString + ")"
+    override def toString = "(" + a.toString + " ∨ " + b.toString + ")"
     def toEnglish = "either " + a.toEnglish + ", or " + b.toEnglish
     def equivalent(other:Predicate) = other match {
       case Disjunction(a1, b1) =>
