@@ -10,7 +10,6 @@ class Universe {
   val entities = MutSet[EntityConstant]()
   val unaryRelations = MutSet[UnaryRelation]()
   val binaryRelations = MutSet[BinaryRelation]()
-  //def relations = onePlaceRelations ++ twoPlaceRelations
 
   /** Map (e,R) to the truth value of Re */
   val applicationMap = Map[(EntityConstant, UnaryRelation), Boolean]()
