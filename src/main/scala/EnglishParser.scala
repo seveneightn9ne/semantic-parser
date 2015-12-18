@@ -11,7 +11,7 @@ import DPrules._
 import AdvPrules._
 
 object EnglishParser extends SentenceParser with RegexParsers {
-  val bannedWords = Determiner.values ++ List("There", "is", "are")
+  val bannedWords = Determiner.values ++ List("There", "is", "are") ++ Pronoun.values
 
   lazy val sentences = sentence+
   lazy val sentence = "\\s*".r ~> vp <~ "." <~ "\\s*".r ^^ {vp => vp}
@@ -25,6 +25,7 @@ object EnglishParser extends SentenceParser with RegexParsers {
       (singulardp <~ " ") ~ noun ~ (" " ~> singularcomplvp).? ^^ {(dp, n, vp) => NP(Some(dp), n, vp)}
     | propernoun ^^ {NP(_)}
     | massnoun   ^^ {NP(_)}
+    | pronoun    ^^ {NP(_)}
     | (preconj <~ " ").? ~ (singularnp <~ " ") ~ (conj <~ " ") ~ singularnp ^^ {(p,l,c,r) =>
           NP(ConjP[NP](p, l, c, r))}
   )
@@ -71,6 +72,9 @@ object EnglishParser extends SentenceParser with RegexParsers {
   lazy val pluralverb   = "\\w+".r  ^^ {v => Verb(v, true)} filter(v =>
       !v.asText.endsWith("s") && goodWord(v))
   lazy val noun         = "[a-z]\\w+".r  ^^ {n => Noun(n,false)} filter(goodWord)
+  lazy val pronoun      = (
+    "[Ee]veryone".r   ^^ {n => Pronoun(Pron.Everyone)}   |
+    "[Ee]verything".r ^^ {n => Pronoun(Pron.Everything)} )
   lazy val propernoun   = "[A-Z]\\w+".r ^^ {ProperNoun(_)} filter(goodWord)
   lazy val massnoun     = "[a-z]\\w+".r ^^ {MassNoun(_)} filter(n =>
       !n.asText.endsWith("s") && goodWord(n))

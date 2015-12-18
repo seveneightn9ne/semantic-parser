@@ -57,10 +57,12 @@ object NPrules {
     type Pron = Value
     val Everyone, Everything, Who, That = Value
   }
-  import Pron._
-  case class Pronoun(value:Pron) extends ClosedClassWord[Pron] with Noun {
+  //import Pron._
+  case class Pronoun(value:Pron.Pron) extends ClosedClassWord[Pron.Pron] with Noun {
     val plural = false
+}
+  object Pronoun {
+    def values = Pron.values.map(_.toString) ++ Pron.values.map(_.toString.toLowerCase)
   }
-
 
 }
