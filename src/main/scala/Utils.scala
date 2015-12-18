@@ -33,15 +33,21 @@ object Utils {
   def prettyprint(xbar:Xbar[Word,Word,Word]):String = xbar.getClass.getSimpleName +
     (xbar.complement match {
       case Some(c) => "\n├─ "
-      case None => "\n└─ "
+      case None => (xbar.adjunct match {
+        case Some(a) => "\n├─ "
+        case _ => "\n└─ "
+      })
     }) + (xbar.head match {
       case Left(h) => h.meta + " \033[1m" + h.asText + "\033[0m\n"
       case Right(h) => prettyprint(h).split("\n").mkString("\n   ")
     }) + (xbar.complement match {
-      case Some(c) => "└─ " + prettyprint(c).split("\n").mkString("\n   ")
+      case Some(c) => (xbar.adjunct match {
+        case Some(a) => "├─ "
+        case _ => "└─ "
+      }) + prettyprint(c).split("\n").mkString("\n   ")
       case None => ""
     }) + (xbar.adjunct match {
-      case Some(a) =>  "   " + prettyprint(a).split("\n").mkString("\n│  ")
+      case Some(a) =>  "└─ " + prettyprint(a).split("\n").mkString("\n   ")
       case None => ""
     })
 

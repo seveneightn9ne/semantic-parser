@@ -11,6 +11,10 @@ object VPrules {
     def apply(head:Verb) = new Vbar(Left(head), None)
     def apply(head:Verb, complement:NP) = new Vbar(Left(head), Some(complement))
     def apply(head:Verb, complement:Option[NP]) = new Vbar(Left(head), complement, None)
+    def apply(head:Verb, complement:Option[NP], adj:Option[AdvP]) = adj match {
+      case Some(a) => new Vbar(Right(new Vbar(Left(head), complement, None)), None, adj)
+      case _ => new Vbar(Left(head), complement, adj)
+    }
     def apply(head:Vbar) = new Vbar(Right(head), None)
   }
   case class VP(spec:Option[NP], head:Either[Vbar,ConjP[VP]]) extends XP[Noun, Verb, Noun, Adverb]

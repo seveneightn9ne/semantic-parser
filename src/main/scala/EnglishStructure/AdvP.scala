@@ -17,7 +17,7 @@ object AdvPrules {
 
   object AdvValues extends Enumeration {
     type Adv = Value
-    val Therefore = Value
+    val Therefore, Not = Value
   }
   case class Adverb(value:AdvValues.Adv) extends ClosedClassWord[AdvValues.Adv]
 

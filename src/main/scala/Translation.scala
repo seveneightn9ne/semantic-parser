@@ -109,9 +109,9 @@ object Translation {
       Existential(v, translate(vbar, Subject(v)))
     }
 
+    // Subclause, given a subject, forward to vbar
     case (VP(Some(NP(None, Left(Nbar(Left(Pronoun(Pron.That)), None, None)))), vbar), ctx:Subject) =>
       translate(vbar, ctx)
-
     case (VP(Some(NP(None, Left(Nbar(Left(Pronoun(Pron.Who)), None, None)))), vbar), ctx:Subject) =>
       translate(vbar, ctx)
 
@@ -155,6 +155,10 @@ object Translation {
     // Verb with complement
     case (Vbar(Left(Verb(v,p)), Some(np),None), Subject(entity)) =>
       translate(np, SubjectPredicate(entity, UniqueDesignations.binaryRelation(v)))
+
+    // Negation
+    case (Vbar(Right(vbar), None, Some(AdvP(Left(Advbar(Left(Adverb(AdvValues.Not)), None))))), ctx) =>
+      Negation(translate(vbar, ctx))
 
     case _ => throw new TranslationException(
       "Can't translate phrase: \"" + phrase.asText + "\"\n" +  Utils.prettyprint(phrase))

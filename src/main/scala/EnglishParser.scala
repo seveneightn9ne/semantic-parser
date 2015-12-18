@@ -11,7 +11,7 @@ import DPrules._
 import AdvPrules._
 
 object EnglishParser extends SentenceParser with RegexParsers {
-  val bannedWords = Determiner.values + "There"
+  val bannedWords = Determiner.values ++ List("There", "is", "are")
 
   lazy val sentences = sentence+
   lazy val sentence = "\\s*".r ~> vp <~ "." <~ "\\s*".r ^^ {vp => vp}
@@ -42,8 +42,13 @@ object EnglishParser extends SentenceParser with RegexParsers {
   lazy val pluralcomplvp = (pluralwhnp <~ " ") ~ pluralvbar ^^ {(n,v) => VP(n,v)}
   lazy val singularcomplvp = (singularwhnp <~ " ") ~ singularvbar ^^ {(n,v) => VP(n,v)}
   lazy val vbar = pluralvbar | singularvbar
-  lazy val pluralvbar = pluralverb ~ (" " ~> np).? ^^ {(v, onp) => Vbar(v, onp)}
-  lazy val singularvbar = singularverb ~ (" " ~> np).? ^^ {(v, onp) => Vbar(v, onp)}
+  lazy val pluralvbar = (
+    (pluralneg <~ " ").? ~ pluralverb ~ (" " ~> np).? ^^ {(oneg, v, onp) => Vbar(v, onp, oneg)}
+    | "are" ~ negpart.? ~ (" " ~> np) ^^ {(v, oneg, np) => Vbar(Verb(v, true), Some(np), oneg)})
+  lazy val singularvbar = (
+     singularverb ~ (" " ~> np).? ^^ {(v, onp) => Vbar(v, onp)}
+    | (singularneg <~ " ") ~ pluralverb ~ (" " ~> np).? ^^ {(oneg, v, onp) => Vbar(v, onp, Some(oneg))}
+    | "is" ~ negpart.? ~ (" " ~> np) ^^ {(v, oneg, np) => Vbar(Verb("i"), Some(np), oneg)})
 
   ////////////////////////// Words
   lazy val singulardet = (
@@ -77,6 +82,9 @@ object EnglishParser extends SentenceParser with RegexParsers {
       "[Ww]ho".r ^^ {n => Noun(n, false)}
     | "[Tt]hat".r ^^ {n => Noun(n, false)})
   lazy val therefore = "[Tt]herefore".r  <~ ",".? <~ " " ^^ {a => AdvP(AdvValues.Therefore)}
+  lazy val pluralneg = "don't" ^^ {a => AdvP(AdvValues.Not)}
+  lazy val singularneg = "doesn't" ^^ {a => AdvP(AdvValues.Not)}
+  lazy val negpart = ("n't" | " not") ^^ {a => AdvP(AdvValues.Not)}
   def goodWord(w:Word) = !bannedWords.contains(w.asText)
 
   def parser = sentences

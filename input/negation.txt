@@ -1,3 +1,6 @@
 No dinosaurs live.
 Miles is a dinosaur.
+No dinosaur is a man.
 Mike is a man.
+Therefore, Miles doesn't live.
+Therefore, Miles is not a man.
