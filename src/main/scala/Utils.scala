@@ -53,9 +53,9 @@ object Utils {
 
   def prettyprint(conj:ConjP[XP[Word,Word,Word,Word]]):String =
     "Conjunction" + "\n" + (conj.preconj match {
-      case Some(p) => "  Preconj " + p.asText + "\n"
+      case Some(p) => "├─ Preconj " + p.asText + "\n"
       case _ => ""
-    }) + "  " + prettyprint(conj.left).split("\n").mkString("\n  ") +
-    "  " + conj.conj.asText + "\n  " + prettyprint(conj.right).split("\n").mkString("\n ")
+    }) + "├─ " + prettyprint(conj.left).split("\n").mkString("\n│  ") +
+    "\n├─ " + conj.conj.asText + "\n└─ " + prettyprint(conj.right).split("\n").mkString("\n   ")
 
 }
