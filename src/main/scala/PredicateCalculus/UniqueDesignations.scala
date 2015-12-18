@@ -14,7 +14,8 @@ object UniqueDesignations {
   def doesRelation(word:String):UnaryRelation = relations get word match {
     case Some(rel) => DoesRelation(rel)
     case _ => {
-      val newrel = word.toUpperCase.filter{ c => !relations.contains(c.toString) }.head.toString
+      val newrel = word.toUpperCase.filter{ c =>
+        !relations.valuesIterator.contains(c.toString) }.head.toString
       relations.put(word,newrel)
       DoesRelation(newrel)
     }
@@ -22,7 +23,8 @@ object UniqueDesignations {
   def isARelation(word:String):UnaryRelation = relations get word match {
     case Some(rel) => IsARelation(rel)
     case _ => {
-      val newrel = word.toUpperCase.filter{ c => !relations.contains(c.toString) }.head.toString
+      val newrel = word.toUpperCase.filter{ c =>
+        !relations.valuesIterator.contains(c.toString) }.head.toString
       relations.put(word,newrel)
       IsARelation(newrel)
     }
@@ -30,7 +32,8 @@ object UniqueDesignations {
   def binaryRelation(word:String):BinaryRelation = relations get word match {
     case Some(rel) => BinaryRelation(rel)
     case _ => {
-      val newrel = word.toUpperCase.filter{ c => !relations.contains(c.toString) }.head.toString
+      val newrel = word.toUpperCase.filter{ c =>
+        !relations.valuesIterator.contains(c.toString) }.head.toString
       relations.put(word,newrel)
       BinaryRelation(newrel)
     }

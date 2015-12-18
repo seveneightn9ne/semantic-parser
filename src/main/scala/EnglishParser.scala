@@ -25,7 +25,7 @@ object EnglishParser extends SentenceParser with RegexParsers {
       (singulardp <~ " ") ~ noun ~ (" " ~> singularcomplvp).? ^^ {(dp, n, vp) => NP(Some(dp), n, vp)}
     | propernoun ^^ {NP(_)}
     | massnoun   ^^ {NP(_)}
-    | pronoun    ^^ {NP(_)}
+    | pronoun ~ (" " ~> singularcomplvp).? ^^ {(n,c) => NP(None,n,c)}
     | (preconj <~ " ").? ~ (singularnp <~ " ") ~ (conj <~ " ") ~ singularnp ^^ {(p,l,c,r) =>
           NP(ConjP[NP](p, l, c, r))}
   )
@@ -45,11 +45,11 @@ object EnglishParser extends SentenceParser with RegexParsers {
   lazy val vbar = pluralvbar | singularvbar
   lazy val pluralvbar = (
     (pluralneg <~ " ").? ~ pluralverb ~ (" " ~> np).? ^^ {(oneg, v, onp) => Vbar(v, onp, oneg)}
-    | "are" ~ negpart.? ~ (" " ~> np) ^^ {(v, oneg, np) => Vbar(Verb(v, true), Some(np), oneg)})
+    | "are" ~ negpart.? ~ (" " ~> pluralnp) ^^ {(v, oneg, np) => Vbar(Verb(v, true), Some(np), oneg)})
   lazy val singularvbar = (
      singularverb ~ (" " ~> np).? ^^ {(v, onp) => Vbar(v, onp)}
     | (singularneg <~ " ") ~ pluralverb ~ (" " ~> np).? ^^ {(oneg, v, onp) => Vbar(v, onp, Some(oneg))}
-    | "is" ~ negpart.? ~ (" " ~> np) ^^ {(v, oneg, np) => Vbar(Verb("i"), Some(np), oneg)})
+    | "is" ~ negpart.? ~ (" " ~> singularnp) ^^ {(v, oneg, np) => Vbar(Verb("i"), Some(np), oneg)})
 
   ////////////////////////// Words
   lazy val singulardet = (

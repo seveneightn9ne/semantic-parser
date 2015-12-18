@@ -1,2 +1,4 @@
-Every#zebra#is#blue.
-Bob#is#a#zebra.
+Every zebra is blue.
+There are no adjectives.
+Blue is a massnoun.
+Bob is a zebra.

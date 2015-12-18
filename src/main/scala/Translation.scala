@@ -85,6 +85,12 @@ object Translation {
         Conditional(translate(nbar, Subject(newContext)), Negation(translate(vbar, Subject(newContext)))))
     }
 
+    // Non-branching DP "No" with no context (came from "there are [no balloons]
+    case (NP(Some(DP(None, Left(Dbar(Left(Determiner(DValues.No)))))), Left(nbar)), NoContext) => {
+      val newContext = UniqueDesignations.variableDesignation(NoContext)
+      Universal(newContext, Negation(translate(nbar, Subject(newContext))))
+    }
+
     // NP with determiner "a", given single context, as in X is [a Y]
     case (NP(Some(DP(None, Left(Dbar(Left(Determiner(DValues.A)))))), nbar), ctx:Subject) =>
       translate(nbar, ctx)
@@ -102,6 +108,13 @@ object Translation {
     // Forward conjunctions. Is that always right?
     case (NP(None, Right(conj)), ctx) =>
       translate(Right(conj), ctx)
+
+    case (VP(None, Left(Vbar(Left(Verb("are",true)),
+      Some(NP(Some(DP(None,Left(Dbar(Left(Determiner(DValues.No)))))), nbar)), None))), NoContext) => {
+      val newContext = UniqueDesignations.variableDesignation(NoContext)
+      Negation(Existential(newContext, translate(nbar, Subject(newContext))))
+    }
+
 
     // Existential (no subject)
     case (VP(None, vbar), NoContext) => {
@@ -140,7 +153,7 @@ object Translation {
         Left(Nbar(Left(Pronoun(_)), None, None)))), vbar)), None), Subject(e)) =>
       Conjunction(Atom(UniqueDesignations.isARelation(n), e), translate(vbar, Subject(e)))
 
-    // is ____ (the "s" in is was removed for being a 1st person present suffix)
+    // is ____ (the "s" in "is" was removed for being a 1st person present suffix)
     case (Vbar(Left(Verb("i",false)), Some(np), None), e:Subject)  =>
         translate(np, e)
 
@@ -151,6 +164,14 @@ object Translation {
     // Non branching Vbar
     case (Vbar(Left(Verb(v,p)), None, None), Subject(entity)) =>
       Atom(UniqueDesignations.doesRelation(v), entity)
+
+    // verb with mass noun complement - make unary relation to save computation
+    // Example: Brian [eats meat] => Eb. the relation is the meat-eating relation.
+    case (Vbar(Left(Verb(v,pl)),
+        Some(NP(None, Left(Nbar(Left(MassNoun(n)), None, None)))), None), Subject(e)) => {
+      val rel = UniqueDesignations.doesRelation(v + " " + n)
+      Atom(rel, e)
+    }
 
     // Verb with complement
     case (Vbar(Left(Verb(v,p)), Some(np),None), Subject(entity)) =>
