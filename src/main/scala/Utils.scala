@@ -27,7 +27,7 @@ object Utils {
       case None => "\n"
     }) + (xp.head match {
       case Left(xbar) => "└─ " +  prettyprint(xbar).split("\n").mkString("\n   ")
-      case Right(conj) => "   " + prettyprint(conj).split("\n").mkString("\n   ")
+      case Right(conj) => "└─ " + prettyprint(conj).split("\n").mkString("\n   ")
     })
 
   def prettyprint(xbar:Xbar[Word,Word,Word]):String = xbar.getClass.getSimpleName +
