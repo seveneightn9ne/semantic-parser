@@ -38,7 +38,8 @@ object UniqueDesignations {
   def entityConstant(word:String):EntityConstant = entities get word match {
     case Some(ent) => EntityConstant(ent)
     case _ => {
-      val newent = word.toLowerCase.filter{ c => !entities.contains(c.toString) }.head.toString
+      val newent = word.toLowerCase.filter{ c =>
+        !entities.valuesIterator.contains(c.toString) }.head.toString
       entities.put(word,newent)
       EntityConstant(newent)
     }
