@@ -125,8 +125,15 @@ object Conclusions {
     validConclusions(allConclusions, universes)
   }
 
-  def generateInterestingConclusions(priors:Set[Predicate]):Set[Predicate] =
-    generateConclusions(priors).filter {p => isInteresting(p, priors)}
+  def generateInterestingConclusions(priors:Set[Predicate]):Set[Predicate] = {
+    val conclusions = generateConclusions(priors).filter {p => isInteresting(p, priors)}
+    var uniqueConclusions = Set[Predicate]()
+    conclusions.foreach{c => {
+      if(uniqueConclusions.forall(d => c.equals(d) || !c.equivalent(d)))
+        uniqueConclusions += c
+    }}
+    uniqueConclusions
+  }
 
 
 }
