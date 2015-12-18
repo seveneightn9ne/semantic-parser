@@ -39,15 +39,18 @@ object Utils {
       })
     }) + (xbar.head match {
       case Left(h) => h.meta + " \033[1m" + h.asText + "\033[0m\n"
-      case Right(h) => prettyprint(h).split("\n").mkString("\n   ")
+      case Right(h) => (xbar.complement, xbar.adjunct) match {
+        case (None, None) => prettyprint(h).split("\n").mkString("\n   ")
+        case _ => prettyprint(h).split("\n").mkString("\n|  ")
+      }
     }) + (xbar.complement match {
       case Some(c) => (xbar.adjunct match {
-        case Some(a) => "├─ "
-        case _ => "└─ "
-      }) + prettyprint(c).split("\n").mkString("\n   ")
-      case None => ""
+        case Some(a) => "├─ " + prettyprint(c).split("\n").mkString("\n|  ")
+        case _ => "└─ " + prettyprint(c).split("\n").mkString("\n   ")
+      })
+    case None => ""
     }) + (xbar.adjunct match {
-      case Some(a) =>  "└─ " + prettyprint(a).split("\n").mkString("\n   ")
+      case Some(a) =>  "\n└─ " + prettyprint(a).split("\n").mkString("\n   ")
       case None => ""
     })
 
@@ -56,6 +59,7 @@ object Utils {
       case Some(p) => "├─ Preconj " + p.asText + "\n"
       case _ => ""
     }) + "├─ " + prettyprint(conj.left).split("\n").mkString("\n│  ") +
-    "\n├─ " + conj.conj.asText + "\n└─ " + prettyprint(conj.right).split("\n").mkString("\n   ")
+    "\n├─ \033[1m" + conj.conj.asText + "\033[0m\n└─ " +
+    prettyprint(conj.right).split("\n").mkString("\n   ")
 
 }
