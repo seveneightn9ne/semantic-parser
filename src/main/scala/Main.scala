@@ -44,8 +44,8 @@ trait SentenceParser extends Parsers {
 	println("  runtime error: " + msg)
       }
     } else if (results.length == 1) {
-      //println("  " + results.head.map(s => s.asText).mkString(". "))
-      //results.head.foreach{s => println(Utils.prettyprint(s))}
+      println("  " + results.head.map(s => s.asText).mkString(". "))
+      results.head.foreach{s => println(Utils.prettyprint(s))}
       try {
         val predicates = results.head.map(s => translate(s, NoContext))
         concludeOrValidate(predicates)
