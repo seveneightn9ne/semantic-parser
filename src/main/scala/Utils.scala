@@ -38,7 +38,7 @@ object Utils {
         case _ => "\n└─ "
       })
     }) + (xbar.head match {
-      case Left(h) => h.meta + " \033[1m" + h.asText + "\033[0m\n"
+      case Left(h) => h.meta + " \033[1m" + h.asText + "\033[0m " + h.features.mkString(" ") + "\n"
       case Right(h) => (xbar.complement, xbar.adjunct) match {
         case (None, None) => prettyprint(h).split("\n").mkString("\n   ")
         case _ => prettyprint(h).split("\n").mkString("\n|  ")
@@ -61,5 +61,22 @@ object Utils {
     }) + "├─ " + prettyprint(conj.left).split("\n").mkString("\n│  ") +
     "\n├─ \033[1m" + conj.conj.asText + "\033[0m\n└─ " +
     prettyprint(conj.right).split("\n").mkString("\n   ")
+
+  def inline(xp:XP[Word,Word,Word,Word]):String = "[" + xp.getClass.getSimpleName + " " + (xp.spec match {
+    case Some(spec) => inline(spec) + " "
+    case None => ""
+  }) + (xp.head match {
+    case Left(xbar) => inline(xbar)
+    case Right(conj) => "FIXME"
+  }) + " ]"
+
+  def inline(xbar:Xbar[Word,Word,Word]):String = "[" + xbar.getClass.getSimpleName + " " + (xbar.head match {
+    case Left(word) => "[" + word.meta + " " + word.asText + "]"
+    case Right(xbar2) => inline(xbar2)
+  }) + " " + (xbar.complement match {
+    case Some(yp) => inline(yp) + " "
+    case None => ""
+  }) + "]" // TODO adjunct
+
 
 }

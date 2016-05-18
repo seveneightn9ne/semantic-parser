@@ -1,68 +1,62 @@
 package semanticparser
 
-
 import XPrules._
 import VPrules._
 import DPrules._
 import PPrules._
+import Features._
 
 object NPrules {
 
   case class Nbar(head:Either[Noun, Nbar], complement:Option[VP] = None, adjunct:Option[PP] = None)
-    extends Xbar[Noun, Verb, Preposition]
+    extends Xbar[Noun, Verb, Preposition] {
+      override def intrinsic(f:Feature) = f match {
+        case _:Plural => true
+        case _ => false
+      }
+    }
   object Nbar {
     def apply(head:Noun) = new Nbar(Left(head), None)
     def apply(head:Nbar, adjunct:PP) = new Nbar(Right(head), None, Some(adjunct))
     def apply(head:Noun, compl:Option[VP]) = new Nbar(Left(head), compl)
 
   }
-  case class NP(spec:Option[DP], head:Either[Nbar,ConjP[NP]]) extends XP[Determiner, Noun, Verb, Preposition]
+  case class NP(head:Either[Nbar,ConjP[NP]]) extends XP[Word, Noun, Verb, Preposition] {
+    val spec = None
+  }
   object NP {
-    def apply(spec:DP, head:Noun) = new NP(Some(spec), Left(Nbar(Left(head), None)))
-    def apply(head:Nbar) = new NP(None, Left(head))
-    def apply(head:Noun) = new NP(None, Left(Nbar(Left(head), None, None)))
-    def apply(head:ConjP[NP]) = new NP(None, Right(head))
-    def apply(spec:Option[DP], head:Noun) = new NP(spec, Left(Nbar(head)))
-    def apply(spec:Option[DP], head:Noun, compl:Option[VP]) = new NP(spec, Left(Nbar(head, compl)))
+    def apply(head:Noun) = new NP(Left(Nbar(Left(head), None)))
+    def apply(head:Nbar) = new NP(Left(head))
+    def apply(head:ConjP[NP]) = new NP(Right(head))
+    def apply(head:Noun, compl:Option[VP]) = new NP(Left(Nbar(head, compl)))
+    def Trace(isplural:Boolean) = new NP(Left(Nbar(Noun.Trace(isplural))))
   }
   sealed trait Noun extends Word {
     val text:String
-    val plural:Boolean
+    def features = Set(plural)
+    val plural:Features.Plural
+    override def meta = "Noun"
   }
-  case class CommonNoun(text:String, plural:Boolean=false) extends Noun {
-    override def asText = plural match {
-      case true => text + "s"
+  case class CommonNoun(text:String, isplural:Boolean=false) extends Noun {
+    val plural = Features.Plural(Some(isplural))
+    override def asText = text
+    /*override def asText = plural.value match {
+      case Some(true) => text + "s"
       case _ => text
-    }
-    override def meta = "CommonNoun" + (if(plural) "(plural)" else "(singular)")
+    }*/
+    //override def meta = "CommonNoun" + (if(plural) "(plural)" else "(singular)")
   }
   case class ProperNoun(text:String) extends Noun {
-    override def asText = text.capitalize
-    val plural = false
-    override def meta = "ProperNoun"
+    val plural = Features.Plural(Some(false))
   }
-  case class MassNoun(text:String) extends Noun {
-    val plural = false
+  /*case class MassNoun(text:String) extends Noun {
+    val plural = Features.Plural(Some(false))
     override def meta = "MassNoun"
-  }
+  }*/
   object Noun {
-    def apply(text:String, plural:Boolean=false) = try {
-      Pronoun(Pron.withName(text.toLowerCase.capitalize))
-    } catch {
-      case e:NoSuchElementException => CommonNoun(text, plural)
-    }
+    def apply(text:String, plural:Boolean=false) = CommonNoun(text, plural)
     def unapply(n:Noun):Option[String] = Some(n.text)
-  }
-  object Pron extends Enumeration {
-    type Pron = Value
-    val Everyone, Everything, Who, That = Value
-  }
-  //import Pron._
-  case class Pronoun(value:Pron.Pron) extends ClosedClassWord[Pron.Pron] with Noun {
-    val plural = false
-}
-  object Pronoun {
-    def values = Pron.values.map(_.toString) ++ Pron.values.map(_.toString.toLowerCase)
+    def Trace(isplural:Boolean) = new CommonNoun("", isplural)
   }
 
 }

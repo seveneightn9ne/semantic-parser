@@ -6,12 +6,16 @@ import com.codecommit.gll._
 import XPrules._
 import Translation._
 import Predicates._
+import DPrules._
+import VPrules._
 
 trait SentenceParser extends Parsers {
-  def main(args: Array[String]) {
+  def main(args:Array[String]) = playground
+
+  def mainOld(args: Array[String]) {
     for (file <- args) {
       println("\nInput: " + file)
-      println("  " + LineStream(Source fromFile file).toString.split("\n").mkString("\n  "))
+      /*println("  " + LineStream(Source fromFile file).toString.split("\n").mkString("\n  "))
       println("\nOutput:")
       val results = parser(LineStream(Source fromFile file))
       if (results exists {_.isInstanceOf[Success[List[Sentence]]]}) {
@@ -24,11 +28,12 @@ trait SentenceParser extends Parsers {
 	  tail.printError("  error:%%d: %s%n    %%s%n    %%s%n".format(msg))(System.err)
 	}
       }
-      println()
+      println()*/
     }
   }
 
-  def parser: Parser[List[Sentence]]
+  //def parser: Parser[List[Sentence]]
+  def parser: Parser[DP]
 
   def handleSuccesses(forest: Stream[List[Sentence]]) {
     val errors = mutable.Set[String]()
@@ -149,5 +154,17 @@ trait SentenceParser extends Parsers {
           println("  \033[31m✗\033[0m " + c + " (INVALID)\n  Counterexample: " + badu.head.toString.split("\n").mkString("\n  "))
     })}
 
+  }
+
+  def playground = {
+    val testcases = List("The dog", "all potatoes", "no boys", "no boy")
+    //val input = "the boy who sings"
+    val input = "the boy who sings"
+    val fromparser = for (Success(xp, _) <- parser(input)) yield xp
+    val output = ValidateFeatures.valid(fromparser)
+    //println("From Parser: (" + fromparser.size.toString + " results)")
+    //fromparser.foreach{s => println(Utils.prettyprint(s))}
+    println("Final Output: (" + output.size.toString + " results)")
+    output.foreach{s => println(Utils.prettyprint(s))}
   }
 }

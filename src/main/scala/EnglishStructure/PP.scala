@@ -15,11 +15,13 @@ object PPrules {
     val spec = None // No Specs on PPs
   }
 
-  object PValues extends Enumeration {
-    type P = Value
-    val On, At, With, From, To, In, Of = Value
-  }
-  import PValues._
-  case class Preposition(value:P) extends ClosedClassWord[P]
+  sealed trait Preposition extends ClosedClassWord
+  case object On extends Preposition
+  case object At extends Preposition
+  case object With extends Preposition
+  case object From extends Preposition
+  case object To extends Preposition
+  case object In extends Preposition
+  case object Of extends Preposition
 
 }

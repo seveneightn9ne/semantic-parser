@@ -9,89 +9,87 @@ import NPrules._
 import VPrules._
 import DPrules._
 import AdvPrules._
+import IPrules._
+import CPrules._
+import littlecPrules._
 
 object EnglishParser extends SentenceParser with RegexParsers {
-  val bannedWords = Determiner.values ++ List("There", "is", "are") ++ Pronoun.values
+  val bannedWords = Determiner.values ++ List("there", "is", "are")
 
   lazy val sentences = sentence+
-  lazy val sentence = "\\s*".r ~> vp <~ "." <~ "\\s*".r ^^ {vp => vp}
+  lazy val sentence = "\\s*".r ~> barecp <~ "." <~ "\\s*".r
 
   ////////////////////////// Noun Phrases
-  lazy val np:Parser[NP] = (singularnp | pluralnp)
-  lazy val pluralwhnp:Parser[NP] = pluralwhnoun ^^ {NP(_)}
-  lazy val singularwhnp:Parser[NP] = singularwhnoun ^^ {NP(_)}
-  lazy val pluralnp:Parser[NP] = (pluraldp <~ " ").? ~ pluralnoun ~ (" " ~> pluralcomplvp).? ^^ {(dp, n, vp) => NP(dp, n, vp)}
-  lazy val singularnp:Parser[NP] = (
-      (singulardp <~ " ") ~ noun ~ (" " ~> singularcomplvp).? ^^ {(dp, n, vp) => NP(Some(dp), n, vp)}
-    | propernoun ^^ {NP(_)}
-    | massnoun   ^^ {NP(_)}
-    | pronoun ~ (" " ~> singularcomplvp).? ^^ {(n,c) => NP(None,n,c)}
-    | (preconj <~ " ").? ~ (singularnp <~ " ") ~ (conj <~ " ") ~ singularnp ^^ {(p,l,c,r) =>
-          NP(ConjP[NP](p, l, c, r))}
-  )
+  lazy val np:Parser[NP] = nbar ^^ {NP(_)}
+  lazy val nbar:Parser[Nbar] = noun ^^ {Nbar(_)}
+  lazy val noun:Parser[Noun] = /*massNoun |*/ pluralNoun | singularNoun | properNoun
+  lazy val pluralNoun = "\\w+s".r ^^ {CommonNoun(_, true)} filter(goodWord)
+  lazy val singularNoun = "\\w+([a-r]|[t-z])".r ^^ {CommonNoun(_)} filter goodWord
+  lazy val properNoun = "[A-Z]\\w+".r ^^ {ProperNoun(_)} filter goodWord
 
   ////////////////////////// Determiner Phrases
-  lazy val singulardp = singulardet ^^ {d => DP(d)}
-  lazy val pluraldp = pluraldet ^^ {d => DP(d)}
+  lazy val dp:Parser[DP] = ((transitivedbar | intransitivedbar | ecdbar) ^^ {dbar => DP(dbar)}
+    | reldbar ^^ {dbar => DP(dbar)})
+  lazy val transitivedbar = ((transitivedet <~ " ") ~ np ^^ {(d, np) => Dbar(d, np)} //| possesive
+    | transitivedet ^^ {Dbar(_, NP.Trace(true))}
+    | transitivedet ^^ {Dbar(_, NP.Trace(false))})
+  lazy val intransitivedbar = (everyone | everything) ^^ {Dbar(_)}
+  lazy val ecdbar =
+    ( np ^^ {np => Dbar(Determiner.EC(true), np)}
+    | np ^^ {Dbar(Determiner.EC(false), _)})
+  lazy val reldbar = (transitivedet <~ " ") ~ littlecp ^^ {(d,c) => RelDbar(d,c)}
+  lazy val everyone = "[Ee]veryone".r ^^ {e => Determiner.Everyone}
+  lazy val everything = "[Ee]verything".r ^^ {e => Determiner.Everything}
+  lazy val transitivedet = a | the | every | some | all | no | whpronoun
+  lazy val a     = "[Aa]".r     ^^ {a => Determiner.A}
+  lazy val the   = "[Tt]he".r   ^^ {a => Determiner.The}
+  lazy val every = "[Ee]very".r ^^ {a => Determiner.Every}
+  lazy val some  = "[Ss]ome".r  ^^ {a => Determiner.Some}
+  lazy val all   = "[Aa]ll".r   ^^ {a => Determiner.All}
+  lazy val no    = "[Nn]o".r    ^^ {a => Determiner.No(true)} |
+                   "[Nn]o".r    ^^ {a => Determiner.No(false)}
+  lazy val there = "[Tt]here".r ^^ {a => Determiner.There(true)} |
+                   "[Tt]here".r ^^ {a => Determiner.There(false)}
+  lazy val whpronoun = (
+      "[Ww]ho".r ^^ {who => Determiner.Who}
+    | "[Ww]hat".r ^^ {what => Determiner.What(true)}
+    | "[Ww]hat".r ^^ {what => Determiner.What(false)})
+
+
+  ////////////////////////// IP, CP, cP
+  lazy val barecp = ip ^^ {ip => CP(ip)}
+  lazy val ip = (dp <~ " ").? ~ ibar ^^ {(subj, ibar) => IP(subj, ibar)}
+  lazy val ibar = vp ^^ {vp => Ibar(Infl(""), vp)}
+  lazy val littlecp = (np <~ " ") ~ cp ^^ {(np, cp) => littlecP(Some(np), cp)}
+  lazy val cp = (dp <~ " ").? ~ cbar ^^ {(dp, cbar) => CP(dp, cbar)}
+  lazy val cbar = compl.? ~ ip ^^ {(compl, ip) => Cbar(compl, ip)}
+  lazy val compl = "that".r ^^ {_ => Compl.That}
 
   ////////////////////////// Verb Phrases (sentences :)
-  lazy val vp = (
-      therefore.? ~ ("[Tt]here ".r ~> vbar)             ^^ {(t,v) => VP(t,v)}
-    | therefore.? ~ (singularnp <~ " ") ~ singularvbar  ^^ {(t,np,v) => VP(t,np, v)}
-    | therefore.? ~ (pluralnp <~ " ") ~ pluralvbar      ^^ {(t,np,v) => VP(t,np, v)}
-  )
-  lazy val pluralcomplvp = (pluralwhnp <~ " ") ~ pluralvbar ^^ {(n,v) => VP(n,v)}
-  lazy val singularcomplvp = (singularwhnp <~ " ") ~ singularvbar ^^ {(n,v) => VP(n,v)}
-  lazy val vbar = pluralvbar | singularvbar
-  lazy val pluralvbar = (
-    (pluralneg <~ " ").? ~ pluralverb ~ (" " ~> np).? ^^ {(oneg, v, onp) => Vbar(v, onp, oneg)}
-    | "are" ~ negpart.? ~ (" " ~> pluralnp) ^^ {(v, oneg, np) => Vbar(Verb(v, true), Some(np), oneg)})
-  lazy val singularvbar = (
-     singularverb ~ (" " ~> np).? ^^ {(v, onp) => Vbar(v, onp)}
-    | (singularneg <~ " ") ~ pluralverb ~ (" " ~> np).? ^^ {(oneg, v, onp) => Vbar(v, onp, Some(oneg))}
-    | "is" ~ negpart.? ~ (" " ~> singularnp) ^^ {(v, oneg, np) => Vbar(Verb("i"), Some(np), oneg)})
-
-  ////////////////////////// Words
-  lazy val singulardet = (
-      "[Ee]very".r  ^^ {d => Determiner(DValues.Every)}
-    | "a".r         ^^ {d => Determiner(DValues.A)}
-    | "[Nn]o".r     ^^ {d => Determiner(DValues.No)})
-  lazy val pluraldet = (
-      "[Aa]ll".r    ^^ {d => Determiner(DValues.All)}
-    | "[Ss]ome".r   ^^ {d => Determiner(DValues.Some)}
-    | "[Nn]o".r     ^^ {d => Determiner(DValues.No)})
-
-  lazy val preconj = (
-      "[Ee]ither".r ^^ {p => Preconj(PreconjV.Either)}
-    | "[Bb]oth".r   ^^ {p => Preconj(PreconjV.Both)})
-  lazy val conj = (
-      "and".r       ^^ {c => Conj(ConjV.And)}
-    | "or".r        ^^ {c => Conj(ConjV.Or)})
-
+  lazy val vp = (vbar ^^ {vbar => VP(DP(Determiner.Trace(true)), vbar)}
+    | vbar ^^ {vbar => VP(DP(Determiner.Trace(false)), vbar)})
+  lazy val vbar = verb ~ (" " ~> dp).? ^^ {(v,d) => Vbar(v,d)}
+  lazy val verb = singularverb | pluralverb
   lazy val singularverb = "\\w+s".r ^^ {v => Verb(v.dropRight(1))} filter(goodWord)
   lazy val pluralverb   = "\\w+".r  ^^ {v => Verb(v, true)} filter(v =>
       !v.asText.endsWith("s") && goodWord(v))
-  lazy val noun         = "[a-z]\\w+".r  ^^ {n => Noun(n,false)} filter(goodWord)
-  lazy val pronoun      = (
-    "[Ee]veryone".r   ^^ {n => Pronoun(Pron.Everyone)}   |
-    "[Ee]verything".r ^^ {n => Pronoun(Pron.Everything)} )
-  lazy val propernoun   = "[A-Z]\\w+".r ^^ {ProperNoun(_)} filter(goodWord)
-  lazy val massnoun     = "[a-z]\\w+".r ^^ {MassNoun(_)} filter(n =>
-      !n.asText.endsWith("s") && goodWord(n))
-  lazy val pluralnoun   = "\\w+s".r ^^ {n => Noun(n.dropRight(1), true)}
-  lazy val pluralwhnoun = (
-      "[Ww]ho".r ^^ {n => Noun(n, true)}
-    | "[Tt]hat".r ^^ {n => Noun(n, true)})
-  lazy val singularwhnoun = (
-      "[Ww]ho".r ^^ {n => Noun(n, false)}
-    | "[Tt]hat".r ^^ {n => Noun(n, false)})
-  lazy val therefore = "[Tt]herefore".r  <~ ",".? <~ " " ^^ {a => AdvP(AdvValues.Therefore)}
-  lazy val pluralneg = "don't" ^^ {a => AdvP(AdvValues.Not)}
-  lazy val singularneg = "doesn't" ^^ {a => AdvP(AdvValues.Not)}
-  lazy val negpart = ("n't" | " not") ^^ {a => AdvP(AdvValues.Not)}
-  def goodWord(w:Word) = !bannedWords.contains(w.asText)
+  // TODO Negation with NegP
 
-  def parser = sentences
+  ////////////////////////// Words
+  lazy val preconj = (
+      "[Ee]ither".r ^^ {p => Conj.Either}
+    | "[Bb]oth".r   ^^ {p => Conj.Both})
+  lazy val conj = (
+      "and".r       ^^ {c => Conj.And}
+    | "or".r        ^^ {c => Conj.Or})
+
+  //lazy val therefore = "[Tt]herefore".r  <~ ",".? <~ " " ^^ {a => Adverb.Therefore}
+  //lazy val pluralneg = "don't" ^^ {a => Adverb.Not}
+  //lazy val singularneg = "doesn't" ^^ {a => Adverb.Not}
+  //lazy val negpart = ("n't" | " not") ^^ {a => Adverb.Not}
+  def goodWord(w:Word) = !bannedWords.contains(w.asText.toLowerCase)
+
+  def parser = dp
   override val whitespace = "".r
 
 }

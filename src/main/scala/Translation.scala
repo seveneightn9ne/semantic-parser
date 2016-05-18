@@ -16,7 +16,7 @@ object Translation {
   case class SubjectPredicate(e:Entity, r:BinaryRelation) extends Context
 
   def translate(phrase:XP[Word,Word,Word,Word], context:Context):Predicate = (phrase, context) match {
-
+/*
     // Conclusions
     case (VP(np, Left(Vbar(Right(vbar), None, Some(AdvP(Left(Advbar(Left(Adverb(AdvValues.Therefore)), None))))))), NoContext) => np match {
       case Some(n) => Conclusion(translate(VP(n, vbar), NoContext))
@@ -127,23 +127,23 @@ object Translation {
       translate(vbar, ctx)
     case (VP(Some(NP(None, Left(Nbar(Left(Pronoun(Pron.Who)), None, None)))), vbar), ctx:Subject) =>
       translate(vbar, ctx)
-
+*/
     case _ => throw new TranslationException("Can't translate XP phrase: \"" + phrase.asText + "\"\n" +
       Utils.prettyprint(phrase))
 
   }
 
   def translate(phrase:Either[Xbar[Word,Word,Word], ConjP[XP[Word,Word,Word,Word]]], context:Context):Predicate = (phrase, context) match {
-    case (Left(xbar), c) => translate(xbar, c)
+ /*   case (Left(xbar), c) => translate(xbar, c)
     case (Right(ConjP(preconj,l:NP,Conj(ConjV.And),r:NP)), e) =>
       Conjunction(translate(l, e), translate(r, e))
     case (Right(ConjP(preconj,l:NP,Conj(ConjV.Or),r:NP)), e) =>
-      Disjunction(translate(l, e), translate(r, e))
+      Disjunction(translate(l, e), translate(r, e))*/
     case _ => throw new TranslationException("Can't translate conjunction: " + phrase)
   }
 
   def translate(phrase:Xbar[Word,Word,Word], context:Context):Predicate = (phrase,context) match {
-
+/*
     // Non Branching Nbar
     case (Nbar(Left(Noun(n)), None, None), Subject(e)) =>
       Atom(UniqueDesignations.isARelation(n), e)
@@ -180,7 +180,7 @@ object Translation {
     // Negation
     case (Vbar(Right(vbar), None, Some(AdvP(Left(Advbar(Left(Adverb(AdvValues.Not)), None))))), ctx) =>
       Negation(translate(vbar, ctx))
-
+*/
     case _ => throw new TranslationException(
       "Can't translate phrase: \"" + phrase.asText + "\"\n" +  Utils.prettyprint(phrase))
   }

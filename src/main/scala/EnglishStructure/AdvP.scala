@@ -11,14 +11,12 @@ object AdvPrules {
     val spec = None // No Specs on AdvPs
   }
   object AdvP {
-    def apply(head:AdvValues.Adv) = new AdvP(Left(Advbar(Left(Adverb(head)))))
+    def apply(head:Adverb) = new AdvP(Left(Advbar(Left(head))))
   }
 
-
-  object AdvValues extends Enumeration {
-    type Adv = Value
-    val Therefore, Not = Value
+  sealed trait Adverb extends ClosedClassWord
+  object Adverb {
+    case object Therefore extends Adverb
+    case object Not extends Adverb
   }
-  case class Adverb(value:AdvValues.Adv) extends ClosedClassWord[AdvValues.Adv]
-
 }
