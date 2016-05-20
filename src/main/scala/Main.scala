@@ -162,7 +162,7 @@ trait SentenceParser extends Parsers {
     val input = "the boy who sings"
     val fromparser = for (Success(xp, _) <- parser(input)) yield xp
     val output = ValidateFeatures.valid(fromparser)
-    //println("From Parser: (" + fromparser.size.toString + " results)")
+    println("From Parser: (" + fromparser.size.toString + " results)")
     //fromparser.foreach{s => println(Utils.prettyprint(s))}
     println("Final Output: (" + output.size.toString + " results)")
     output.foreach{s => println(Utils.prettyprint(s))}

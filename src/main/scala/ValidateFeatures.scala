@@ -38,7 +38,7 @@ object ValidateFeatures {
 
   def validateFeatures(xp:XP[Word,Word,Word,Word]):Boolean = xp.spec match {
     case Some(yp) => {
-      println(Utils.inline(xp) + " has to agree with " + Utils.inline(yp))
+      //println(Utils.inline(xp) + " has to agree with " + Utils.inline(yp))
       agree(xp, yp, true) && validateFeatures(yp) && validateFeatures(xp.head)
     }
     case _ => validateFeatures(xp.head)
@@ -54,9 +54,9 @@ object ValidateFeatures {
     }
     case Left(word) => xbar.complement match {
       case Some(yp) => {
-        println(word + " has to agree with " + Utils.inline(yp))
-        println(word.features)
-        println(word.features.filter(f => word.epp(f) && !word.intrinsic(f)))
+        //println(word + " has to agree with " + Utils.inline(yp))
+        //println(word.features)
+        //println(word.features.filter(f => word.epp(f) && !word.intrinsic(f)))
         agree(word, yp, false) && validateFeatures(yp) //TODO combine with transitivity?
       }
       case _ => true
@@ -64,12 +64,12 @@ object ValidateFeatures {
   }
 
   def agree(xp:hasFeatures, yp:XP[Word,Word,Word,Word], epp:Boolean) = xp.features.filter{ f => {
-    println("HEY " + f + xp.epp(f) + xp.intrinsic(f))
+    //println("HEY " + f + xp.epp(f) + xp.intrinsic(f))
     xp.epp(f) == epp && !xp.intrinsic(f) // All features on XP which need to have agreed with YP
     }}.forall{ f => {
-    println("Feature " + f + " on " + xp + " has to agree with the probe result")
+    //println("Feature " + f + " on " + xp + " has to agree with the probe result")
     val p = probe(yp, f)
-    println("Probe result: " + p)
+    //println("Probe result: " + p)
     p._1.exists{ _.value == f.value }
   }
   }

@@ -56,7 +56,12 @@ object NPrules {
   object Noun {
     def apply(text:String, plural:Boolean=false) = CommonNoun(text, plural)
     def unapply(n:Noun):Option[String] = Some(n.text)
-    def Trace(isplural:Boolean) = new CommonNoun("", isplural)
+    case class Trace(isplural:Boolean) extends Noun {
+      override val plural = Features.Plural(scala.Some(isplural))
+      override val meta = "trace"
+      override val text = ""
+      override val asText = ""
+    }
   }
 
 }
